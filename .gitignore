@@ -53,4 +53,10 @@ dkms.conf
 
 # Generated files
 generated/
-ifcc
+antlr
+compiler/ifcc
+compiler/.antlr
+compiler/build/
+compiler/generated/
+compiler/pre
+tests/ifcc-test-output

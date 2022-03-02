@@ -58,3 +58,7 @@ gui:
 clean:
 	rm -rf build generated
 	rm -f ifcc
+
+test: 
+	make 
+	./ifcc input.c
