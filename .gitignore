@@ -54,3 +54,9 @@ dkms.conf
 # Generated files
 generated/
 ifcc
+antlr/*
+antlr.tmp/*
+tests/ifcc-test-output/*
+
+#VS CODE
+.vscode/
