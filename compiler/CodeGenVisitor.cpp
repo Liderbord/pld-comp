@@ -23,9 +23,9 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx) 
 {
-	std::cout << "content" << std::endl;
+	//std::cout << "content" << std::endl;
 	std::string init = visit(ctx->init()).as<std::string>();
-	std::cout << init << std::endl;
+	//std::cout << init << std::endl;
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (!contentContext) {
 		return init;
