@@ -24,7 +24,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 		cout << "# ->content" << endl;
 		string content = visit(contentContext).as<string>();
 
-		body += "\t" + content + "\n";
+		body += content + "\n";
 	}
 	string returnValue = visit(ctx->returnValue()).as<string>();
 	cout << body << "\t" << returnValue << "\n"
@@ -61,7 +61,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 
 	int index = (this->vars.size() + 1) * 8;
 	this->vars[varname] = index;
-	return "movl\t$" + constval + ", -" + to_string(index) + "(%rbp)";
+	return "\tmovl\t$" + constval + ", -" + to_string(index) + "(%rbp) # assigning " + constval + " to " + varname + "\n";
 }
 
 antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx) 
