@@ -52,8 +52,8 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
-		string varname = varnameNode->getText();
-		string index = to_string(this->vars[varname]);
+		std::string varname = varnameNode->getText();
+		std::string index = std::to_string(this->vars[varname]);
 		returnval = "-" + index + "(%rbp)";
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
