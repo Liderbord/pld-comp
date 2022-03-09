@@ -9,7 +9,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 	std::cout << "prog" << std::endl;
 	std::string body;
 #ifdef __APPLE__
-	body = START_MAC
+	body = START_MAC;
 #else
 	body = START_OTHERS;
 #endif
