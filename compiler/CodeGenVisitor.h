@@ -8,6 +8,9 @@
 class  CodeGenVisitor : public ifccBaseVisitor {
 	public:
 		virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override ;
-
+		virtual antlrcpp::Any visitContent(ifccParser::ContentContext *ctx) override ;
+		virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override ;
+		virtual antlrcpp::Any visitReturnValue(ifccParser::ReturnValueContext *ctx) override ;
+    std::map<std::string, int> vars;
 };
 
