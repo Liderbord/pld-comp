@@ -1,16 +1,18 @@
 #include "CodeGenVisitor.h"
+using namespace std;
 
-static const std::string START_MAC = ".globl	_main\n_main:\n";
+static const string START_MAC = ".globl	_main\n_main:\n";
 static const std::string START_OTHERS = ".globl	main\nmain:\n";
 static const std::string END = "\tret\n";
 
+
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
-	std::cout << "prog" << std::endl;
+	//std::cout << "prog" << std::endl;
 	std::string body = __APPLE__ ? START_MAC : START_OTHERS;
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
-		std::cout << "->content" << std::endl;
+		//std::cout << "->content" << std::endl;
 		std::string content = visit(contentContext).as<std::string>();
 		body += "\t" + content + "\n";
 	}
@@ -35,7 +37,7 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx) 
 {
-	std::cout << "init" << std::endl;
+	//std::cout << "init" << std::endl;
 	std::string type = ctx->TYPE()->getText();
 	std::cout << type << std::endl;
 	std::string varname = ctx->VARNAME()->getText();
@@ -47,7 +49,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx) 
 {
-	std::cout << "returnValue" << std::endl;
+	//std::cout << "returnValue" << std::endl;
 	std::string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
