@@ -59,11 +59,13 @@ compiler/.antlr
 compiler/build/
 compiler/generated/
 compiler/pre
+.DS_Store
 
 
 tests/ifcc-test-output
 ifcc
 antlr/*
+antlr4/*
 antlr.tmp/*
 tests/ifcc-test-output/*
 
