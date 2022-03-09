@@ -1,12 +1,21 @@
 #include "CodeGenVisitor.h"
+using namespace std;
 
-static const std::string START_MAC = ".globl	_main\n_main:";
-static const std::string START_OTHERS = ".globl	main\nmain:";
-static const std::string END = "\tret\n";
+static const string START_MAC = ".globl	_main\n_main:\n";
+static const std::string START_OTHERS = ".globl	main\nmain:\n";
+static const std::string END = "# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
-	std::string body = __APPLE__ ? START_MAC : START_OTHERS;
+	string body;
+#ifdef __APPLE__
+	body = START_MAC;
+#else
+	body = START_OTHERS;
+#endif
+	ifccParser::ContentContext *contentContext = ctx->content();
+	body += "\tendbr64\n \tpushq\t%rbp  # save %rbp on the stack\n\tmovq\t%rsp, %rbp # define %rbp for the current function\n";
+
 	ifccParser::ContentContext * contentContext = ctx->content();
 	std::cout << body << std::endl;
 	if (contentContext) {
@@ -18,14 +27,19 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	std::string init = visit(ctx->init()).as<std::string>();
+
+	cout << "# content" << endl;
+	string init = visit(ctx->init()).as<string>();
+	cout << "# ";
+	cout << init << endl;
+
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (!contentContext) {
 		return init;
 	} else {
-		std::string content = visit(contentContext).as<std::string>();
+		string content = visit(contentContext).as<string>();
 		return init + content;
 	}
 }
