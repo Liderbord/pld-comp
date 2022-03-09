@@ -59,4 +59,13 @@ compiler/.antlr
 compiler/build/
 compiler/generated/
 compiler/pre
+
+
 tests/ifcc-test-output
+ifcc
+antlr/*
+antlr.tmp/*
+tests/ifcc-test-output/*
+
+#VS CODE
+.vscode/
