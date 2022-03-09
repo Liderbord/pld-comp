@@ -1,16 +1,20 @@
 #include "CodeGenVisitor.h"
 using namespace std;
 
+
 static const string START_MAC = ".globl	_main\n_main:\n";
 static const std::string START_OTHERS = ".globl	main\nmain:\n";
 static const std::string END = "\tret\n";
 
 
+
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
 
-	std::cout << "prog" << std::endl;
-	std::string body;
+
+
+	cout << "#prog" << std::endl;
+	string body;
 #ifdef __APPLE__
 	body = START_MAC;
 #else
@@ -18,50 +22,61 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 #endif
 		ifccParser::ContentContext *contentContext = ctx->content();
 
+
+
 	if (contentContext) {
-		//std::cout << "->content" << std::endl;
-		std::string content = visit(contentContext).as<std::string>();
+		cout << "#->content" << endl;
+		string content = visit(contentContext).as<string>();
+
 		body += "\t" + content + "\n";
 	}
-	std::string returnValue = visit(ctx->returnValue()).as<std::string>();
-	std::cout << body << "\t" << returnValue << "\n" << END;
+	string returnValue = visit(ctx->returnValue()).as<string>();
+	cout << body << "\t" << returnValue << "\n" << END;
 	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx) 
 {
-	//std::cout << "content" << std::endl;
-	std::string init = visit(ctx->init()).as<std::string>();
-	//std::cout << init << std::endl;
+
+	cout << "#content" << endl;
+	string init = visit(ctx->init()).as<string>();
+	cout<<"#";
+	cout << init << endl;
+
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (!contentContext) {
 		return init;
 	} else {
-		std::string content = visit(contentContext).as<std::string>();
+		string content = visit(contentContext).as<string>();
 		return init + content;
 	}
 }
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx) 
 {
-	//std::cout << "init" << std::endl;
-	std::string type = ctx->TYPE()->getText();
-	std::cout << type << std::endl;
-	std::string varname = ctx->VARNAME()->getText();
-	std::string constval = ctx->CONST()->getText();
+
+	cout << "#init" << endl;
+	string type = ctx->TYPE()->getText();
+	cout<< "#";
+	cout << type << endl;
+	string varname = ctx->VARNAME()->getText();
+	string constval = ctx->CONST()->getText();
+
 	int index = (this->vars.size() + 1) * 8;
 	this->vars[varname] = index;
-	return "movl $" + constval + ", -" + std::to_string(index) + "(%rbp)";
+	return "movl $" + constval + ", -" + to_string(index) + "(%rbp)";
 }
 
 antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx) 
 {
-	//std::cout << "returnValue" << std::endl;
-	std::string returnval;
+
+	cout << "#returnValue" << endl;
+	string returnval;
+
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
-		std::string varname = varnameNode->getText();
-		std::string index = std::to_string(this->vars[varname]);
+		string varname = varnameNode->getText();
+		string index = to_string(this->vars[varname]);
 		returnval = "-" + index + "(%rbp)";
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
