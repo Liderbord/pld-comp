@@ -8,9 +8,22 @@ static const string END = "\tret\n";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
+<<<<<<< HEAD
 	//cout << "prog" << endl;
 	string body = __APPLE__ ? START_MAC : START_OTHERS;
 	ifccParser::ContentContext * contentContext = ctx->content();
+=======
+
+	std::cout << "prog" << std::endl;
+	std::string body;
+#ifdef __APPLE__
+	body = START_MAC;
+#else
+	body = START_OTHERS;
+#endif
+		ifccParser::ContentContext *contentContext = ctx->content();
+
+>>>>>>> 83a76847f5174ab46de8574321f6bc3d75a6eee9
 	if (contentContext) {
 		cout << "#->content" << endl;
 		string content = visit(contentContext).as<string>();
