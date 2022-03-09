@@ -3,11 +3,15 @@ grammar ifcc;
 axiom: prog;
 
 prog:
-	TYPE 'main' '(' ')' '{' content RETURN returnValue ';' '}'
-	| TYPE 'main' '(' ')' '{' RETURN returnValue ';' '}';
-returnValue: CONST | VARNAME;
+	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
+	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
+value: CONST | VARNAME;
 content: init | init content;
-init: TYPE VARNAME '=' CONST ';';
+init: TYPE VARNAME '=' expression ';';
+expression:
+	expression '*' expression # expressionMult
+	| expression '+' expression # expressionAdd
+	| value # expressionValue;
 
 RETURN: 'return';
 CONST: [0-9]+;
