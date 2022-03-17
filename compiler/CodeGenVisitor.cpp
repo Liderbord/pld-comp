@@ -63,8 +63,15 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	string constval = ctx->CONST()->getText();
 
 	int index = (this->vars.size() + 1) * 8;
-	this->vars[varname] = index;
-	return "movl $" + constval + ", -" + to_string(index) + "(%rbp)";
+	if( vars.find(varname)==vars.end()){
+		this->vars[varname]=index;
+		return "movl $" + constval + ", -" + to_string(index) + "(%rbp)";
+	}else{
+		error=true;
+		return NULL;
+	}
+	
+	
 }
 
 antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx) 
@@ -82,4 +89,21 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 		returnval = "$" + ctx->CONST()->getText();
 	}
 	return "movl " + returnval + ", %eax";
+}
+
+
+
+bool CodeGenVisitor::getWarning(){
+	return this->warning;
+}
+bool CodeGenVisitor::getError(){
+	return this->error;
+}
+
+void CodeGenVisitor::setWarning(bool val){
+	this->warning=val;
+}
+
+void CodeGenVisitor::setError(bool val){
+	this->error=val;
 }
