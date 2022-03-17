@@ -13,7 +13,10 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitValue(ifccParser::ValueContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionMult(ifccParser::ExpressionMultContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionAdd(ifccParser::ExpressionAddContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override ;
+		virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override ;
+		
     std::map<std::string, int> vars;
 };
 

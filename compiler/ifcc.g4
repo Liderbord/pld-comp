@@ -6,18 +6,18 @@ prog:
 	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
 	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
 value: CONST | VARNAME;
-content: init | init content;
+content: declaration*;
 init: TYPE VARNAME '=' expression ';';
 
-expression:
-	expression '*' expression # operationMult
-	| expression '+' expression # operationAdd
-	| '(' expression ')' # parentheses
-	| value # operationValue;
+declaration: TYPE VARNAME (',' VARNAME)* ';' ;
 
-variables:
-	VARNAME ',' variables #multipleVariables
-	| VARNAME #variable
+expression:
+	expression '*' expression # expressionMult
+	| expression '+' expression # expressionAdd
+	| '(' expression ')' # expressionPar
+	| value # expressionValue;
+
+	 
 
 RETURN: 'return';
 CONST: [0-9]+;

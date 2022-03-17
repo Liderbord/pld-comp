@@ -79,7 +79,30 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAdd(ifccParser::ExpressionAddContex
 	return string("%eax");
 }
 
+antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
+{
+	//visitChildren();
+}
+
+
+
 antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
 {
 	return visit(ctx->value()).as<string>();
 }
+
+antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
+{
+	string type = ctx->TYPE()->getText();
+	for (auto varname: ctx->VARNAME()) {
+		string name = varname->getText();
+		int index = (this->vars.size() + 1) * 8; //int
+		this->vars[name] = index;
+	}	
+	return 0;
+}
+
+
+
+
+
