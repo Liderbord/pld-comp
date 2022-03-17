@@ -44,9 +44,13 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	string varname = ctx->VARNAME()->getText();
 	string value = visit(ctx->expression()).as<string>();
 	int index = (this->vars.size() + 1) * 8;
-	this->vars[varname] = index;
-	cout << "\tmovl " + value + ", " << EAX << endl;
-	cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+	if (vars.find(varname) == vars.end()) {
+		this->vars[varname] = index;
+		cout << "\tmovl " + value + ", " << EAX << endl;
+	  cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+	} else {
+		error = true;
+	}
 	return 0;
 }
 
@@ -138,4 +142,21 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
 {
 	return visit(ctx->value()).as<string>();
+}
+
+
+
+bool CodeGenVisitor::getWarning(){
+	return this->warning;
+}
+bool CodeGenVisitor::getError(){
+	return this->error;
+}
+
+void CodeGenVisitor::setWarning(bool val){
+	this->warning=val;
+}
+
+void CodeGenVisitor::setError(bool val){
+	this->error=val;
 }
