@@ -4,6 +4,7 @@ using namespace std;
 static const string START_MAC = ".globl	_main\n_main:\n";
 static const string START_OTHERS = ".globl	main\nmain:\n";
 static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
+static const string EAX = "%eax";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
@@ -43,7 +44,8 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	string value = visit(ctx->expression()).as<string>();
 	int index = (this->vars.size() + 1) * 8;
 	this->vars[varname] = index;
-	cout << "\tmovl " + value + ", -" + to_string(index) + "(%rbp)" << endl;
+	cout << "\tmovl " + value + ", " << EAX << endl;
+	cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
 	return 0;
 }
 
@@ -52,8 +54,8 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
-		std::string varname = varnameNode->getText();
-		std::string index = std::to_string(this->vars[varname]);
+		string varname = varnameNode->getText();
+		string index = to_string(this->vars[varname]);
 		returnval = "-" + index + "(%rbp)";
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
@@ -64,19 +66,31 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 antlrcpp::Any CodeGenVisitor::visitExpressionMult(ifccParser::ExpressionMultContext *ctx) 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
-	cout << "\tmovl " << leftval << ", %eax" << endl;
 	string rightval = visit(ctx->expression(1)).as<string>();
-  cout << "\timull " << rightval << ", %eax" << endl;
-	return string("%eax");
+	int index = (this->vars.size() + 1) * 8;
+	string indexString = to_string(index);
+	string varname = "temp" + indexString;
+	this->vars[varname] = index;
+	std::string regval = "-" + indexString + "(%rbp)";
+	cout << "\tmovl " << leftval << ", " << EAX << endl;
+  cout << "\timull " << rightval << ", " << EAX << endl;
+	cout << "\tmovl " << EAX << ", " << regval << endl;
+	return regval;
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionAdd(ifccParser::ExpressionAddContext *ctx) 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
-	cout << "\tmovl " << leftval << ", %eax" << endl;
 	string rightval = visit(ctx->expression(1)).as<string>();
-  cout << "\tiaddl " << rightval << ", %eax" << endl;
-	return string("%eax");
+	int index = (this->vars.size() + 1) * 8;
+	string indexString = to_string(index);
+	string varname = "temp" + indexString;
+	this->vars[varname] = index;
+	std::string regval = "-" + indexString + "(%rbp)";
+	cout << "\tmovl " << leftval << ", " << EAX << endl;
+  cout << "\taddl " << rightval << ", " << EAX << endl;
+	cout << "\tmovl " << EAX << ", " << regval << endl;
+	return regval;
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
