@@ -61,4 +61,5 @@ clean:
 
 test: 
 	make 
-	./ifcc input.c
+	./ifcc input.c > input.s
+	as -o input.io input.s
