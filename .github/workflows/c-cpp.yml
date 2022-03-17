@@ -14,6 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install-antlr
-      run: ./install-antlr.sh
+      run: chmod 755 ./install-antlr.sh && ./install-antlr.sh
     - name: compile
       run: cd compiler/ && ./runmake_ubuntu.sh
