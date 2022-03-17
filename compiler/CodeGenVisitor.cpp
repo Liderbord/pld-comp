@@ -114,6 +114,27 @@ antlrcpp::Any CodeGenVisitor::visitExpressionSub(ifccParser::ExpressionSubContex
 	return operationExpression(leftval, rightval, "sub");
 }
 
+antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationExpression(leftval, rightval, "and");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationExpression(leftval, rightval, "or");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationExpression(leftval, rightval, "xor");
+}
+
 antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
 {
 	return visit(ctx->value()).as<string>();

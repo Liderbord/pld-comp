@@ -13,6 +13,9 @@ expression:
 	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
 	| expression '-' expression # expressionSub
+	| expression '&=' expression # expressionAnd
+	| expression '|=' expression # expressionOr
+	| expression '^=' expression # expressionXor
 	| value # expressionValue;
 
 RETURN: 'return';

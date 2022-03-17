@@ -17,6 +17,9 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitExpressionDiv(ifccParser::ExpressionDivContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionAdd(ifccParser::ExpressionAddContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionSub(ifccParser::ExpressionSubContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionOr(ifccParser::ExpressionOrContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionXor(ifccParser::ExpressionXorContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override ;
     std::map<std::string, int> vars;
 };
