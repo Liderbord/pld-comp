@@ -53,17 +53,18 @@ dkms.conf
 
 # Generated files
 generated/
-antlr
+antlr/
+antlr4/
 compiler/ifcc
 compiler/.antlr
 compiler/build/
 compiler/generated/
 compiler/pre
+.DS_Store
 
 
 tests/ifcc-test-output
 ifcc
-antlr/*
 antlr.tmp/*
 tests/ifcc-test-output/*
 
