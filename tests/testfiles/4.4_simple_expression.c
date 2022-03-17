@@ -1,6 +1,5 @@
 int main() {
-    int a = 42;
-    int g = 11;
-    int b = a * g + 50 + a * 4;
-    return b;
+    int t = 10;
+    int a = t * 2 / 4 + 10 - 3;
+    return a;
 }

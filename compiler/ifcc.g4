@@ -10,7 +10,9 @@ content: init | init content;
 init: TYPE VARNAME '=' expression ';';
 expression:
 	expression '*' expression # expressionMult
+	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
+	| expression '-' expression # expressionSub
 	| value # expressionValue;
 
 RETURN: 'return';
