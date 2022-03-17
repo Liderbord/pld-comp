@@ -13,7 +13,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: configure
-      run: ./configure
     - name: compile
       run: cd compiler/ && ./runmake_ubuntu.sh
