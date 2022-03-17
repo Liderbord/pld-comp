@@ -1,85 +1,85 @@
 #include "CodeGenVisitor.h"
 using namespace std;
 
-
 static const string START_MAC = ".globl	_main\n_main:\n";
-static const std::string START_OTHERS = ".globl	main\nmain:\n";
-static const std::string END = "\tret\n";
-
-
+static const string START_OTHERS = ".globl	main\nmain:\n";
+static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
-
-
-
-	cout << "#prog" << std::endl;
 	string body;
-#ifdef __APPLE__
-	body = START_MAC;
-#else
-	body = START_OTHERS;
-#endif
-		ifccParser::ContentContext *contentContext = ctx->content();
+	#ifdef __APPLE__
+		body = START_MAC;
+	#else
+		body = START_OTHERS;
+	#endif
+	body += "\tendbr64\n \tpushq\t%rbp  # save %rbp on the stack\n\tmovq\t%rsp, %rbp # define %rbp for the current function";
+	cout << body << endl;
 
-
-
+	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
-		cout << "#->content" << endl;
-		string content = visit(contentContext).as<string>();
-
-		body += "\t" + content + "\n";
+		cout << "\t# content" << endl;
+		visit(contentContext);
 	}
-	string returnValue = visit(ctx->returnValue()).as<string>();
-	cout << body << "\t" << returnValue << "\n" << END;
+	string value = visit(ctx->value()).as<string>();
+	cout << "\t" << "movl " << value << ", %eax" << endl << END;
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-
-	cout << "#content" << endl;
-	string init = visit(ctx->init()).as<string>();
-	cout<<"#";
-	cout << init << endl;
-
+	visit(ctx->init());
 	ifccParser::ContentContext * contentContext = ctx->content();
-	if (!contentContext) {
-		return init;
-	} else {
-		string content = visit(contentContext).as<string>();
-		return init + content;
+	if (contentContext) {
+		visit(contentContext);
 	}
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx) 
 {
-
-	cout << "#init" << endl;
 	string type = ctx->TYPE()->getText();
-	cout<< "#";
-	cout << type << endl;
 	string varname = ctx->VARNAME()->getText();
-	string constval = ctx->CONST()->getText();
-
+	string value = visit(ctx->expression()).as<string>();
 	int index = (this->vars.size() + 1) * 8;
 	this->vars[varname] = index;
-	return "movl $" + constval + ", -" + to_string(index) + "(%rbp)";
+	cout << "\tmovl " + value + ", -" + to_string(index) + "(%rbp)" << endl;
+	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {
-
-	cout << "#returnValue" << endl;
 	string returnval;
-
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
-		string varname = varnameNode->getText();
-		string index = to_string(this->vars[varname]);
+		std::string varname = varnameNode->getText();
+		std::string index = std::to_string(this->vars[varname]);
 		returnval = "-" + index + "(%rbp)";
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
 	}
-	return "movl " + returnval + ", %eax";
+	return returnval;
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionMult(ifccParser::ExpressionMultContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	cout << "\tmovl " << leftval << ", %eax" << endl;
+	string rightval = visit(ctx->expression(1)).as<string>();
+  cout << "\timull " << rightval << ", %eax" << endl;
+	return string("%eax");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionAdd(ifccParser::ExpressionAddContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	cout << "\tmovl " << leftval << ", %eax" << endl;
+	string rightval = visit(ctx->expression(1)).as<string>();
+  cout << "\tiaddl " << rightval << ", %eax" << endl;
+	return string("%eax");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
+{
+	return visit(ctx->value()).as<string>();
 }
