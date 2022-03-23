@@ -9,18 +9,23 @@ value: CONST | VARNAME;
 
 content: init*;
 
-
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
 
-
-
-
 expression:
 	expression '*' expression # expressionMult
+	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
 	| '(' expression ')' # expressionPar
+	| expression '-' expression # expressionSub
+	| expression '&=' expression # expressionAnd
+	| expression '|=' expression # expressionOr
+	| expression '^=' expression # expressionXor
+	| expression '==' expression # expressionEqual
+	| expression '!=' expression # expressionNotEqual
+	| expression '>' expression # expressionGreater
+	| expression '<' expression # expressionLess
 	| value # expressionValue;
 
 	 

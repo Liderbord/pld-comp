@@ -46,6 +46,15 @@ int main(int argn, const char **argv)
   
   CodeGenVisitor v;
   v.visit(tree);
+  v.setError(false);
+  v.setWarning(false);
+  if(v.getError()==true){
+    return 1;
+  }else{
+    return 0;
+  }
 
-  return 0;
+  
+
+  
 }
