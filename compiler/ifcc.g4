@@ -6,12 +6,18 @@ prog:
 	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
 	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
 value: CONST | VARNAME;
-content: init | init content;
-init: TYPE VARNAME '=' expression ';';
+
+content: init*;
+
+init: TYPE declaration; 
+declaration: dec (',' dec)* ';' ; 
+dec: VARNAME ('=' expression)? ;
+
 expression:
 	expression '*' expression # expressionMult
 	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
+	| '(' expression ')' # expressionPar
 	| expression '-' expression # expressionSub
 	| expression '&=' expression # expressionAnd
 	| expression '|=' expression # expressionOr
@@ -21,6 +27,8 @@ expression:
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
 	| value # expressionValue;
+
+	 
 
 RETURN: 'return';
 CONST: [0-9]+;
