@@ -6,10 +6,16 @@ prog:
 	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
 	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
 value: CONST | VARNAME;
-content: declaration*;
-init: TYPE VARNAME '=' expression ';';
 
-declaration: TYPE VARNAME (',' VARNAME)* ';' ;
+content: init*;
+
+
+init: TYPE declaration; 
+declaration: dec (',' dec)* ';' ; 
+dec: VARNAME ('=' expression)? ;
+
+
+
 
 expression:
 	expression '*' expression # expressionMult

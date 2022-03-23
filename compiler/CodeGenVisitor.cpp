@@ -1,5 +1,8 @@
 #include "CodeGenVisitor.h"
+#include <utility>
+#include<vector>
 using namespace std;
+
 
 static const string START_MAC = ".globl	_main\n_main:\n";
 static const string START_OTHERS = ".globl	main\nmain:\n";
@@ -29,25 +32,65 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	visit(ctx->init());
-	ifccParser::ContentContext * contentContext = ctx->content();
-	if (contentContext) {
-		visit(contentContext);
-	}
+	visitChildren(ctx);
 	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx) 
 {
+	// we assume that type is INT for now
 	string type = ctx->TYPE()->getText();
-	string varname = ctx->VARNAME()->getText();
-	string value = visit(ctx->expression()).as<string>();
-	int index = (this->vars.size() + 1) * 8;
-	this->vars[varname] = index;
-	cout << "\tmovl " + value + ", " << EAX << endl;
-	cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+	//ctx->declaration() --> contexte de vector
+	// visit(ctx->declaration()) --> renvoie un vector
+	vector<pair<string,string>> vectorVars = visit(ctx->declaration());
+	for (auto paire : vectorVars){
+		string varname = paire.first;
+		// type = INT
+		int index = (this->vars.size() + 1) * 8;
+		this->vars[varname] = index;
+		cout << varname << endl;
+		cout << vars[varname] << endl;
+
+		// look for the value and cout ASSEMBLY code
+		if (paire.second != ""){
+			string value = paire.second;
+			cout << "\tmovl " + value + ", " << EAX << endl;
+			cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+		}	
+	} 
 	return 0;
 }
+
+
+antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
+{
+	//string type = ctx->TYPE()->getText();
+	vector<pair<string, string>> vectorVars;
+	for (auto contexte: ctx->dec()) {
+		//get the result of visitDec, ie: pair
+		pair<string, string> paire = visit(contexte);
+		//push into the vector
+		vectorVars.push_back(paire);
+	}	
+	return vectorVars;
+}
+
+antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
+{
+	string varname = ctx->VARNAME()->getText();
+	string value;
+	if (ctx->expression()){
+		value = visit(ctx->expression()).as<string>();
+	} else {
+		value = "";
+	}
+
+	pair<string, string> paire;
+	paire.first = varname;
+	paire.second = value;
+	return paire;
+}
+
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {
@@ -73,7 +116,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionMult(ifccParser::ExpressionMultCont
 	this->vars[varname] = index;
 	std::string regval = "-" + indexString + "(%rbp)";
 	cout << "\tmovl " << leftval << ", " << EAX << endl;
-  cout << "\timull " << rightval << ", " << EAX << endl;
+  	cout << "\timull " << rightval << ", " << EAX << endl;
 	cout << "\tmovl " << EAX << ", " << regval << endl;
 	return regval;
 }
@@ -96,6 +139,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAdd(ifccParser::ExpressionAddContex
 antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
 {
 	//visitChildren();
+	return 0;
 }
 
 
@@ -105,16 +149,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueCo
 	return visit(ctx->value()).as<string>();
 }
 
-antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
-{
-	string type = ctx->TYPE()->getText();
-	for (auto varname: ctx->VARNAME()) {
-		string name = varname->getText();
-		int index = (this->vars.size() + 1) * 8; //int
-		this->vars[name] = index;
-	}	
-	return 0;
-}
+
 
 
 
