@@ -10,7 +10,16 @@ content: init | init content;
 init: TYPE VARNAME '=' expression ';';
 expression:
 	expression '*' expression # expressionMult
+	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
+	| expression '-' expression # expressionSub
+	| expression '&=' expression # expressionAnd
+	| expression '|=' expression # expressionOr
+	| expression '^=' expression # expressionXor
+	| expression '==' expression # expressionEqual
+	| expression '!=' expression # expressionNotEqual
+	| expression '>' expression # expressionGreater
+	| expression '<' expression # expressionLess
 	| value # expressionValue;
 
 RETURN: 'return';
