@@ -74,9 +74,10 @@ string CodeGenVisitor::operationExpression(string leftval, string rightval, stri
 	string varname = "temp" + indexString;
 	this->vars[varname] = index;
 	std::string regval = "-" + indexString + "(%rbp)";
-	cout << "\tmovl " << leftval << ", " << EAX << endl;
-  cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
-	cout << "\tmovl " << EAX << ", " << regval << endl;
+	cout << "\tmovl\t" << leftval << ", " << EAX << endl;
+	cout << "\t" << operation << "\t" << rightval << ", " << EAX << endl;
+	cout << "\tmovl\t" << EAX << ", " << regval << "\n"
+		 << endl;
 	return regval;
 }
 
@@ -84,6 +85,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionMult(ifccParser::ExpressionMultCont
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
+	cout << "\t# do " << leftval << " * " << rightval << endl;
 	return operationExpression(leftval, rightval, "imull");
 }
 
@@ -96,11 +98,13 @@ antlrcpp::Any CodeGenVisitor::visitExpressionDiv(ifccParser::ExpressionDivContex
 	string varname = "temp" + indexString;
 	this->vars[varname] = index;
 	std::string regval = "-" + indexString + "(%rbp)";
-	cout << "\tmovl " << leftval << ", " << EAX << endl;
+	cout << "\t# do " << leftval << "/ " << rightval << endl;
+	cout << "\tmovl\t" << leftval << ", " << EAX << endl;
 	cout << "\tcltd" << endl;
-  cout << "\tmovl " << rightval << ", " << ECX << endl;
-	cout << "\tidivl " << ECX << endl;
-	cout << "\tmovl " << EAX << ", " << regval << endl;
+	cout << "\tmovl\t" << rightval << ", " << ECX << endl;
+	cout << "\tidivl\t" << ECX << endl;
+	cout << "\tmovl\t" << EAX << ", " << regval << "\n"
+		 << endl;
 	return regval;
 }
 
@@ -108,20 +112,23 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAdd(ifccParser::ExpressionAddContex
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
-	return operationExpression(leftval, rightval, "add");
+	cout << "\t# do " << leftval << " + " << rightval << endl;
+	return operationExpression(leftval, rightval, "add ");
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionSub(ifccParser::ExpressionSubContext *ctx) 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
-	return operationExpression(leftval, rightval, "sub");
+	cout << "\t# do " << leftval << " - " << rightval << endl;
+	return operationExpression(leftval, rightval, "sub ");
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
+	cout << "\t# do " << leftval << " - " << rightval << endl;
 	return operationExpression(leftval, rightval, "and");
 }
 
@@ -129,6 +136,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
+	cout << "\t# do " << leftval << " | " << rightval << endl;
 	return operationExpression(leftval, rightval, "or");
 }
 
@@ -136,6 +144,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
+	cout << "\t# do " << leftval << " ^ " << rightval << endl;
 	return operationExpression(leftval, rightval, "xor");
 }
 
