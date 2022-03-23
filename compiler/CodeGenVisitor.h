@@ -27,16 +27,18 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitExpressionGreater(ifccParser::ExpressionGreaterContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionLess(ifccParser::ExpressionLessContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override ;
+		virtual antlrcpp::Any visitIfElse(ifccParser::IfElseContext *ctx) override ;
 
     std::map<std::string, int> vars;
-	void setError(bool val);
-	bool getError();
-	void setWarning(bool val);
-	bool getWarning();
-	private:
-		bool warning;
-		bool error;
-};
+		int jumps;
+		void setError(bool val);
+		bool getError();
+		void setWarning(bool val);
+		bool getWarning();
+		private:
+			bool warning;
+			bool error;
+	};
 
 
 

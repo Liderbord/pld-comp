@@ -30,7 +30,13 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	visit(ctx->init());
+	ifccParser::InitContext * initContext = ctx->init();
+	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
+	if (initContext) {
+		visit(initContext);
+	} else if (ifElseContext) {
+		visit(ifElseContext);
+	}
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
 		visit(contentContext);
@@ -101,8 +107,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionDiv(ifccParser::ExpressionDivContex
 	cout << "\tcltd" << endl;
 	cout << "\tmovl\t" << rightval << ", " << ECX << endl;
 	cout << "\tidivl\t" << ECX << endl;
-	cout << "\tmovl\t" << EAX << ", " << regval << "\n"
-		 << endl;
+	cout << "\tmovl\t" << EAX << ", " << regval << "\n" << endl;
 	return regval;
 }
 
@@ -183,6 +188,22 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessCont
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	return operationCompExpression(leftval, rightval, "le");
+}
+
+antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx) 
+{
+	string expval = visit(ctx->expression()).as<string>();
+	this->jumps++;
+	string jump = "LBB0_" + to_string(this->jumps);
+	cout << "\tcmpl $0, " << expval << endl;
+	cout << "\tje " << jump << endl;
+	visit(ctx->content(0));
+	cout << jump << ":" << endl;
+	ifccParser::ContentContext * contentContext = ctx->content(1);
+	if (contentContext) {
+		visit(contentContext);
+	}
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 

@@ -6,7 +6,7 @@ prog:
 	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
 	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
 value: CONST | VARNAME;
-content: init | init content;
+content: (init | ifElse) content?;
 init: TYPE VARNAME '=' expression ';';
 expression:
 	expression '*' expression # expressionMult
@@ -21,6 +21,7 @@ expression:
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
 	| value # expressionValue;
+ifElse: 'if' '(' expression ')' '{' content '}' ( 'else' '{' content '}' )?;
 
 RETURN: 'return';
 CONST: [0-9]+;
