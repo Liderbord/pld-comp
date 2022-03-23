@@ -141,6 +141,8 @@ antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContex
 {
 	visitChildren(ctx);
 	return 0;
+}
+
 string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation)
 {
 	string regval = getNewTempVariable();
