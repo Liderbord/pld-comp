@@ -57,9 +57,6 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		if (vars.find(varname) == vars.end())
 		{
 			this->vars[varname] = index;
-			cout << varname << endl;
-			cout << vars[varname] << endl;
-
 			// look for the value and cout ASSEMBLY code
 			if (paire.second != "")
 			{
@@ -139,8 +136,7 @@ string CodeGenVisitor::getNewTempVariable()
 
 antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
 {
-	visitChildren(ctx);
-	return 0;
+	return visit(ctx->expression()).as<string>();
 }
 
 string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation)
