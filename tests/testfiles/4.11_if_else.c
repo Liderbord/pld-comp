@@ -6,5 +6,10 @@ int main() {
     } else {
         int b = 2;
     }
+    if (x > 0) {
+        int v = 1;
+    } else {
+        int w = 2;
+    }
     return 0;
 }

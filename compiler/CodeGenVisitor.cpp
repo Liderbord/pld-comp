@@ -32,10 +32,13 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
 	ifccParser::InitContext * initContext = ctx->init();
 	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
+	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
 	if (initContext) {
 		visit(initContext);
 	} else if (ifElseContext) {
 		visit(ifElseContext);
+	} else if (whileDoContext) {
+		visit(whileDoContext);
 	}
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
@@ -203,6 +206,22 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 	if (contentContext) {
 		visit(contentContext);
 	}
+	return 0;
+}
+
+antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx) 
+{
+	this->jumps++;
+	string jumpCondition = "LBB0_" + to_string(this->jumps);
+	this->jumps++;
+	string jumpEnd = "LBB0_" + to_string(this->jumps);
+	cout << jumpCondition << ":" << endl;
+	string expval = visit(ctx->expression()).as<string>();
+	cout << "\tcmpl $0, " << expval << endl;
+	cout << "\tje " << jumpEnd << endl;
+	visit(ctx->content());
+	cout << "\tjmp " << jumpCondition << endl;
+	cout << jumpEnd << ":" << endl;
 	return 0;
 }
 

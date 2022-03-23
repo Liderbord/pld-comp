@@ -1,10 +1,11 @@
 int main() {
     int x = 3;
     int y = 1;
-    if (x > 0) {
+    while (x < 0) {
         int a = 1;
-    } else {
-        int b = 2;
+    }
+    while (y < 0) {
+        int b = 10;
     }
     return 0;
 }
