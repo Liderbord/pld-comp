@@ -68,12 +68,16 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	return returnval;
 }
 
-string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation) {
+string CodeGenVisitor::getNewTempVariable() {
 	int index = (this->vars.size() + 1) * 8;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->vars[varname] = index;
-	std::string regval = "-" + indexString + "(%rbp)";
+	return "-" + indexString + "(%rbp)";
+}
+
+string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation) {
+	string regval = getNewTempVariable();
 	cout << "\tmovl " << leftval << ", " << EAX << endl;
   cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
 	cout << "\tmovl " << EAX << ", " << regval << endl;
@@ -91,11 +95,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionDiv(ifccParser::ExpressionDivContex
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
-	int index = (this->vars.size() + 1) * 8;
-	string indexString = to_string(index);
-	string varname = "temp" + indexString;
-	this->vars[varname] = index;
-	std::string regval = "-" + indexString + "(%rbp)";
+	string regval = getNewTempVariable();
 	cout << "\tmovl " << leftval << ", " << EAX << endl;
 	cout << "\tcltd" << endl;
   cout << "\tmovl " << rightval << ", " << ECX << endl;
@@ -139,12 +139,49 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 	return operationExpression(leftval, rightval, "xor");
 }
 
+string CodeGenVisitor::operationCompExpression(string leftval, string rightval, string comp) {
+	string regval = getNewTempVariable();
+	cout << "\tmovl " << leftval << ", " << EAX << endl;
+	cout << "\tcmpl " << rightval << ", " << EAX << endl;
+	cout << "\tset" << comp << " %al" << endl;
+	cout << "\tandb	$1, %al" << endl;
+	cout << "\tmovzbl	%al, %eax" << endl;
+	cout << "\tmovl	%eax, " << regval << endl;
+	return regval;
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionEqual(ifccParser::ExpressionEqualContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "e");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionNotEqual(ifccParser::ExpressionNotEqualContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "ne");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreaterContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "ge");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "le");
+}
+
 antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
 {
 	return visit(ctx->value()).as<string>();
 }
-
-
 
 bool CodeGenVisitor::getWarning(){
 	return this->warning;

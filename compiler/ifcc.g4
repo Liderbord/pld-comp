@@ -16,6 +16,10 @@ expression:
 	| expression '&=' expression # expressionAnd
 	| expression '|=' expression # expressionOr
 	| expression '^=' expression # expressionXor
+	| expression '==' expression # expressionEqual
+	| expression '!=' expression # expressionNotEqual
+	| expression '>' expression # expressionGreater
+	| expression '<' expression # expressionLess
 	| value # expressionValue;
 
 RETURN: 'return';
