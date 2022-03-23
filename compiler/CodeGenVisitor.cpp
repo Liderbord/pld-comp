@@ -7,10 +7,9 @@ static const string START_MAC = ".globl	_main\n_main:\n";
 static const string START_OTHERS = ".globl	main\nmain:\n";
 static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
 static const string EAX = "%eax";
-<<<<<<< HEAD
-== == == =
-			 static const string ECX = "%ecx";
->>>>>>> 1693a74a494b6cd84f27190043ae9b199ab920b0
+
+ static const string ECX = "%ecx";
+
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
@@ -67,6 +66,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 				string value = paire.second;
 				cout << "\tmovl " + value + ", " << EAX << endl;
 				cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+
 			}
 		}
 		else
