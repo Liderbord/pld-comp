@@ -137,6 +137,10 @@ string CodeGenVisitor::getNewTempVariable()
 	return "-" + indexString + "(%rbp)";
 }
 
+antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
+{
+	visitChildren(ctx);
+	return 0;
 string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation)
 {
 	string regval = getNewTempVariable();
