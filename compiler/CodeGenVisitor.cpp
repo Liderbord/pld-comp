@@ -68,6 +68,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		}
 		else
 		{
+			// TODO : print the error
 			error = true;
 		}
 	}
@@ -106,6 +107,34 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 	paire.first = varname;
 	paire.second = value;
 	return paire;
+}
+
+
+antlrcpp::Any CodeGenVisitor::visitAffectationConst(ifccParser::AffectationConstContext *ctx)
+{
+	string varname = ctx->VARNAME()->getText();
+	string value = ctx->CONST()->getText();
+	string index;
+	// first look for the variable in vars fir
+	if (vars.find(varname) != vars.end()){
+		index = to_string(this->vars[varname]);
+		cout << "\tmovl " + value + ", " << EAX << endl;
+		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
+	} else {
+		// if the variable hasnt been declared yet, then tell the user to declare it frst and print the error
+		error = true;
+	}
+	return 0;
+}
+
+antlrcpp::Any CodeGenVisitor::visitAffectationVar(ifccParser::AffectationVarContext *ctx)
+{
+	return 0;
+}
+
+antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
+{
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)

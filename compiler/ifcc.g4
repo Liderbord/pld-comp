@@ -13,6 +13,10 @@ init: TYPE declaration;
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
 
+affectation: VARNAME '=' VARNAME # affectationVar
+	| VARNAME '=' CONST # affectationConst
+	| VARNAME '=' expression # affectationExpr;
+
 expression:
 	expression '*' expression # expressionMult
 	| expression '/' expression # expressionDiv

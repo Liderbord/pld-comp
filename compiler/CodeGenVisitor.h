@@ -13,6 +13,9 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override ;
 		virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override ;
 		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
+		virtual antlrcpp::Any visitAffectationVar(ifccParser::AffectationVarContext *ctx) override ;
+		virtual antlrcpp::Any visitAffectationConst(ifccParser::AffectationConstContext *ctx) override ;
+		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
 		virtual antlrcpp::Any visitValue(ifccParser::ValueContext *ctx) override ;
 		string getNewTempVariable();
 		string operationExpression(string rightval, string leftval, string operation);
