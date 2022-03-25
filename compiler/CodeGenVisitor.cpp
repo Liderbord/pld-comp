@@ -68,6 +68,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		}
 		else
 		{
+			// TODO : print the error
 			error = true;
 		}
 	}
@@ -106,6 +107,29 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 	paire.first = varname;
 	paire.second = value;
 	return paire;
+}
+
+
+
+antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
+{
+	// getting the variable 
+	string varname = ctx->VARNAME()->getText();
+	// getting the variable/const by using the expressionValue visitor
+	string value = visit(ctx->expression()).as<string>();
+	string index;
+	// check if the variable was already declared
+	if (vars.find(varname) != vars.end()){
+		index = to_string(this->vars[varname]);
+		// apply the direct assignment
+		cout << "\t# assigning " << value << " to " << varname << endl;
+		cout << "\tmovl " + value + ", " << EAX << endl;
+		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
+	} else {
+		// set an error
+		error = true;
+	}
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
