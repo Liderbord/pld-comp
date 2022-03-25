@@ -7,15 +7,13 @@ prog:
 	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
 value: CONST | VARNAME;
 
-content: init*;
+content: (init | affectation) content?;
 
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
 
-affectation: VARNAME '=' VARNAME # affectationVar
-	| VARNAME '=' CONST # affectationConst
-	| VARNAME '=' expression # affectationExpr;
+affectation: VARNAME '=' expression ';' # affectationExpr;
 
 expression:
 	expression '*' expression # expressionMult

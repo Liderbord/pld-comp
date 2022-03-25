@@ -110,30 +110,24 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 }
 
 
-antlrcpp::Any CodeGenVisitor::visitAffectationConst(ifccParser::AffectationConstContext *ctx)
-{
-	string varname = ctx->VARNAME()->getText();
-	string value = ctx->CONST()->getText();
-	string index;
-	// first look for the variable in vars fir
-	if (vars.find(varname) != vars.end()){
-		index = to_string(this->vars[varname]);
-		cout << "\tmovl " + value + ", " << EAX << endl;
-		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else {
-		// if the variable hasnt been declared yet, then tell the user to declare it frst and print the error
-		error = true;
-	}
-	return 0;
-}
-
-antlrcpp::Any CodeGenVisitor::visitAffectationVar(ifccParser::AffectationVarContext *ctx)
-{
-	return 0;
-}
 
 antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
 {
+	// getting the variable 
+	string varname = ctx->VARNAME()->getText();
+	// getting the variable/const by using the expressionValue visitor
+	string value = visit(ctx->expression()).as<string>();
+	string index;
+	// check if the variable was already declared
+	if (vars.find(varname) != vars.end()){
+		index = to_string(this->vars[varname]);
+		// apply the direct assignment 
+		cout << "\tmovl " + value + ", " << EAX << endl;
+		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
+	} else {
+		// set an error
+		error = true;
+	}
 	return 0;
 }
 
