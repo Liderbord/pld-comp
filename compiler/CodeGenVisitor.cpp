@@ -121,7 +121,8 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	// check if the variable was already declared
 	if (vars.find(varname) != vars.end()){
 		index = to_string(this->vars[varname]);
-		// apply the direct assignment 
+		// apply the direct assignment
+		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
 	} else {
