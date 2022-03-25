@@ -12,43 +12,53 @@ static const string ECX = "%ecx";
 static const string EDX = "%edx";
 static const string ARG_REGS[6] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
 
-antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-	for (auto fn : ctx->fn()) {
+	for (auto fn : ctx->fn())
+	{
 		visit(fn);
 	}
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 {
 	int counter = 0;
-	for (auto varnameContext : ctx->VARNAME()) {
+	for (auto varnameContext : ctx->VARNAME())
+	{
 		string varname = varnameContext->getText();
 		int index = (this->getVars().size() + 1) * 8;
-		if (this->isVarNoDeclarated(varname)) {
+		if (this->isVarNoDeclarated(varname))
+		{
 			this->setVar(varname, index);
-			if (counter < 6) {
+			if (counter < 6)
+			{
 				cout << "\tmovl " << ARG_REGS[counter] << ", -" + to_string(index) + "(%rbp)" << endl;
 			}
-		} else {
+		}
+		else
+		{
 			// TODO : print the error
 			error = true;
 		}
-		counter++;	
+		counter++;
 	}
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx)
 {
 	int counter = 0;
-	for (auto fn : ctx->expression()) {
+	for (auto fn : ctx->expression())
+	{
 		string regval = visit(fn);
-		if (counter < 6) {
+		if (counter < 6)
+		{
 			cout << "\tmovl " << regval << ", " << ARG_REGS[counter] << endl;
-		} else {
-			string reg = (counter == 6 ? to_string((counter - 6)*8) : "") + "(%rsp)";
+		}
+		else
+		{
+			string reg = (counter == 6 ? to_string((counter - 6) * 8) : "") + "(%rsp)";
 			cout << "\tmovl " << regval << ", " << reg << endl;
 		}
 		counter++;
@@ -56,24 +66,25 @@ antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx)
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
 	string head;
 	string fnName = ctx->VARNAME()->getText();
 	this->setCurrentFunction(fnName);
-	#ifdef __APPLE__
-		head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
-	#else
-		head = ".globl	" + fnName + "\n" + fnName + ":\n";
-	#endif
+#ifdef __APPLE__
+	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
+#else
+	head = ".globl	" + fnName + "\n" + fnName + ":\n";
+#endif
 	cout << head << STACK << endl;
-	
-	ifccParser::ArgsDefContext * argsDefContext = ctx->argsDef();
-	if (argsDefContext) {
+
+	ifccParser::ArgsDefContext *argsDefContext = ctx->argsDef();
+	if (argsDefContext)
+	{
 		cout << "\t# args" << endl;
 		visit(argsDefContext);
 	}
-	
+
 	cout << "\t# content" << endl;
 	visit(ctx->content());
 	cout << END << endl;
@@ -86,11 +97,12 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 	return 0;
 }
 
-antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx)
+antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx)
 {
 	string value = visit(ctx->expression()).as<string>();
 	cout << "\t# return " << value << endl;
-	cout << "\t" << "movl " << value << ", %eax" << endl;
+	cout << "\t"
+		 << "movl " << value << ", %eax" << endl;
 	return 0;
 }
 
@@ -107,7 +119,8 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		// type = INT
 		int index = (this->getVars().size() + 1) * 8;
 		// if varname already exists in vars, then it's an error
-		if (this->isVarNoDeclarated(varname)) {
+		if (this->isVarNoDeclarated(varname))
+		{
 			this->setVar(varname, index);
 			mapWarnings[varname] = 0;
 			this->varsError[varname] = index;
@@ -118,13 +131,15 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 				cout << "\tmovl " + value + ", " << EAX << endl;
 				cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
 			}
-		} else {
+		}
+		else
+		{
 			// TODO : print the error
 			error = true;
 		}
 	}
 
-return 0;
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
@@ -162,41 +177,48 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
 {
-	// getting the variable 
+	// getting the variable
 	string varname = ctx->VARNAME()->getText();
 	// getting the variable/const by using the expressionValue visitor
 	string value = visit(ctx->expression()).as<string>();
 	string index;
 	// check if the variable was already declared
-	if (this->isVarNoDeclarated(varname)){
+	if (this->isVarNoDeclarated(varname))
+	{
 		mapWarnings[varname] = 1;
 		index = to_string(this->getVar(varname));
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else if (varsError.find(varname) == varsError.end()) {
+	}
+	else if (varsError.find(varname) == varsError.end())
+	{
 		// set an error
 		error = true;
 	}
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
-	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
-	if (varnameNode) {
+	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
+	if (varnameNode)
+	{
 		string varname = varnameNode->getText();
 		string index = to_string(this->getVar(varname));
 		returnval = "-" + index + "(%rbp)";
-	} else {
+	}
+	else
+	{
 		returnval = "$" + ctx->CONST()->getText();
 	}
 	return returnval;
 }
 
-string CodeGenVisitor::getNewTempVariable() {
+string CodeGenVisitor::getNewTempVariable()
+{
 	int index = (this->getVars().size() + 1) * 8;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
@@ -204,23 +226,27 @@ string CodeGenVisitor::getNewTempVariable() {
 	return "-" + indexString + "(%rbp)";
 }
 
-string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation) {
+string CodeGenVisitor::operationExpression(string leftval, string rightval, string operation)
+{
 	string regval = getNewTempVariable();
 	cout << "\tmovl " << leftval << ", " << EAX << endl;
-  cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
+	cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
 	cout << "\tmovl " << EAX << ", " << regval << endl;
 	return regval;
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionMultDiv(ifccParser::ExpressionMultDivContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionMultDiv(ifccParser::ExpressionMultDivContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	string operation = ctx->MULTDIV()->getText();
-	if (operation == "*") {
+	if (operation == "*")
+	{
 		cout << "\t# do " << leftval << " * " << rightval << endl;
 		return operationExpression(leftval, rightval, "imull");
-	} else {
+	}
+	else
+	{
 		cout << "\t# do " << leftval << " / " << rightval << endl;
 		string regval = getNewTempVariable();
 		cout << "\tmovl " << leftval << ", " << EAX << endl;
@@ -232,21 +258,24 @@ antlrcpp::Any CodeGenVisitor::visitExpressionMultDiv(ifccParser::ExpressionMultD
 	}
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionAddSub(ifccParser::ExpressionAddSubContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionAddSub(ifccParser::ExpressionAddSubContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	string operation = ctx->ADDSUB()->getText();
-	if (operation == "+") {
+	if (operation == "+")
+	{
 		cout << "\t# do " << leftval << " + " << rightval << endl;
 		return operationExpression(leftval, rightval, "add ");
-	} else {
+	}
+	else
+	{
 		cout << "\t# do " << leftval << " - " << rightval << endl;
 		return operationExpression(leftval, rightval, "sub ");
 	}
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
@@ -254,7 +283,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContex
 	return operationExpression(leftval, rightval, "and");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
@@ -262,7 +291,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext 
 	return operationExpression(leftval, rightval, "or");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
@@ -270,7 +299,8 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 	return operationExpression(leftval, rightval, "xor");
 }
 
-string CodeGenVisitor::operationCompExpression(string leftval, string rightval, string comp) {
+string CodeGenVisitor::operationCompExpression(string leftval, string rightval, string comp)
+{
 	string regval = getNewTempVariable();
 	cout << "\tmovl " << leftval << ", " << EAX << endl;
 	cout << "\tcmpl " << rightval << ", " << EAX << endl;
@@ -281,49 +311,49 @@ string CodeGenVisitor::operationCompExpression(string leftval, string rightval, 
 	return regval;
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionEqual(ifccParser::ExpressionEqualContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionEqual(ifccParser::ExpressionEqualContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	return operationCompExpression(leftval, rightval, "e");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionNotEqual(ifccParser::ExpressionNotEqualContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionNotEqual(ifccParser::ExpressionNotEqualContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	return operationCompExpression(leftval, rightval, "ne");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreaterContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreaterContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	return operationCompExpression(leftval, rightval, "ge");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessContext *ctx)
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
 	return operationCompExpression(leftval, rightval, "le");
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx)
 {
 	return visit(ctx->value()).as<string>();
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext *ctx)
 {
 	string fnName = ctx->VARNAME()->getText();
 	visit(ctx->args());
 	string call;
-	#ifdef __APPLE__
-		call = "\tcallq	_" + fnName;
-	#else
-		call = "\tcallq	_" + fnName;
-	#endif
+#ifdef __APPLE__
+	call = "\tcallq	_" + fnName;
+#else
+	call = "\tcallq	_" + fnName;
+#endif
 	cout << call << endl;
 	string regval = getNewTempVariable();
 	cout << "\tmovl " << EAX << ", " << regval << endl;
@@ -335,7 +365,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContex
 	return visit(ctx->expression()).as<string>();
 }
 
-antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 {
 	string expval = visit(ctx->expression()).as<string>();
 	this->jumps++;
@@ -344,14 +374,15 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 	cout << "\tje " << jump << endl;
 	visit(ctx->content(0));
 	cout << jump << ":" << endl;
-	ifccParser::ContentContext * contentContext = ctx->content(1);
-	if (contentContext) {
+	ifccParser::ContentContext *contentContext = ctx->content(1);
+	if (contentContext)
+	{
 		visit(contentContext);
 	}
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 {
 	this->jumps++;
 	string jumpCondition = "LBB0_" + to_string(this->jumps);
@@ -367,36 +398,43 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	return 0;
 }
 
-
-bool CodeGenVisitor::getError(){
+bool CodeGenVisitor::getError()
+{
 	return this->error;
 }
 
-void CodeGenVisitor::setError(bool val){
-	this->error=val;
+void CodeGenVisitor::setError(bool val)
+{
+	this->error = val;
 }
 
-void CodeGenVisitor::setCurrentFunction(string name){
+void CodeGenVisitor::setCurrentFunction(string name)
+{
 	this->vars[name] = {};
 	this->currentFunction = name;
 }
 
-string CodeGenVisitor::getCurrentFunction(){
+string CodeGenVisitor::getCurrentFunction()
+{
 	return this->currentFunction;
 }
 
-map<string, int> CodeGenVisitor::getVars(){
+map<string, int> CodeGenVisitor::getVars()
+{
 	return this->vars[this->currentFunction];
 }
 
-int CodeGenVisitor::getVar(string varname){
+int CodeGenVisitor::getVar(string varname)
+{
 	return this->vars[this->currentFunction][varname];
 }
 
-void CodeGenVisitor::setVar(string varname, int index){
+void CodeGenVisitor::setVar(string varname, int index)
+{
 	this->vars[this->currentFunction][varname] = index;
 }
 
-bool CodeGenVisitor::isVarNoDeclarated(string varname) {
+bool CodeGenVisitor::isVarNoDeclarated(string varname)
+{
 	return this->vars[this->currentFunction].find(varname) == this->vars[this->currentFunction].end();
 }
