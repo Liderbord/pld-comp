@@ -1,5 +1,5 @@
 int main()
 {
     /* commentaire! */
-    return 33;
+    return 42;
 }
