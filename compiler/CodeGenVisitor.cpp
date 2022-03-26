@@ -3,28 +3,17 @@ using namespace std;
 
 static const string START_MAC = ".globl	_main\n_main:\n";
 static const string START_OTHERS = ".globl	main\nmain:\n";
+static const string STACK = "\tendbr64\n \tpushq\t%rbp  # save %rbp on the stack\n\tmovq\t%rsp, %rbp # define %rbp for the current function";
 static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
 static const string EAX = "%eax";
 static const string ECX = "%ecx";
+static const string EDX = "%edx";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
-	string body;
-	#ifdef __APPLE__
-		body = START_MAC;
-	#else
-		body = START_OTHERS;
-	#endif
-	body += "\tendbr64\n \tpushq\t%rbp  # save %rbp on the stack\n\tmovq\t%rsp, %rbp # define %rbp for the current function";
-	cout << body << endl;
-
-	ifccParser::ContentContext * contentContext = ctx->content();
-	if (contentContext) {
-		cout << "\t# content" << endl;
-		visit(contentContext);
+	for (auto fn : ctx->fn()) {
+		visit(fn);
 	}
-	string value = visit(ctx->value()).as<string>();
-	cout << "\t" << "movl " << value << ", %eax" << endl << END;
 	return 0;
 }
 
@@ -33,17 +22,27 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 	ifccParser::InitContext * initContext = ctx->init();
 	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
 	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
+	ifccParser::ReturnValueContext * returnValueContext = ctx->returnValue();
 	if (initContext) {
 		visit(initContext);
 	} else if (ifElseContext) {
 		visit(ifElseContext);
 	} else if (whileDoContext) {
 		visit(whileDoContext);
+	} else if (returnValueContext) {
+		visit(returnValueContext);
 	}
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
 		visit(contentContext);
 	}
+	return 0;
+}
+
+antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx)
+{
+	string value = visit(ctx->value()).as<string>();
+	cout << "\t" << "movl " << value << ", %eax" << endl;
 	return 0;
 }
 
@@ -193,6 +192,27 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessCont
 	return operationCompExpression(leftval, rightval, "le");
 }
 
+antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
+{
+	return visit(ctx->value()).as<string>();
+}
+
+
+antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext *ctx) 
+{
+	string fnName = ctx->VARNAME()->getText();
+	string call;
+	#ifdef __APPLE__
+		call = "\tcallq	_" + fnName;
+	#else
+		call = "\tcallq	_" + fnName;
+	#endif
+	cout << call << endl;
+	string regval = getNewTempVariable();
+	cout << "\tmovl " << EAX << ", " << regval << endl;
+	return regval;
+}
+
 antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx) 
 {
 	string expval = visit(ctx->expression()).as<string>();
@@ -225,9 +245,19 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx) 
 {
-	return visit(ctx->value()).as<string>();
+	string head;
+	string fnName = ctx->VARNAME()->getText();
+	#ifdef __APPLE__
+		head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
+	#else
+		head = ".globl	" + fnName + "\n" + fnName + ":\n";
+	#endif
+	cout << head << STACK << endl;
+	visit(ctx->content());
+	cout << END << endl;
+	return 0;
 }
 
 bool CodeGenVisitor::getWarning(){

@@ -2,11 +2,11 @@ grammar ifcc;
 
 axiom: prog;
 
-prog:
-	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
-	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
+prog: fn+;
+fn: TYPE VARNAME '(' arguments ')' '{' content '}';
+content: (init | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME;
-content: (init | ifElse | whileDo) content?;
+returnValue: 'return' value ';';
 init: TYPE VARNAME '=' expression ';';
 expression:
 	expression '*' expression # expressionMult
@@ -20,11 +20,12 @@ expression:
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
+	| VARNAME '(' arguments ')' # expressionFn
 	| value # expressionValue;
 ifElse: 'if' '(' expression ')' '{' content '}' ( 'else' '{' content '}' )?;
 whileDo: 'while' '(' expression ')' '{' content '}';
+arguments: (TYPE VARNAME)*;
 
-RETURN: 'return';
 CONST: [0-9]+;
 COMMENT: '/*' .*? '*/' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
