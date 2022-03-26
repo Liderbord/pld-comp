@@ -1,10 +1,8 @@
 #pragma once
 
-
 #include "antlr4-runtime.h"
 #include "generated/ifccBaseVisitor.h"
 using namespace std;
-
 
 class  CodeGenVisitor : public ifccBaseVisitor {
 	public:
@@ -29,23 +27,20 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitExpressionLess(ifccParser::ExpressionLessContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionFn(ifccParser::ExpressionFnContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override ;
 		virtual antlrcpp::Any visitIfElse(ifccParser::IfElseContext *ctx) override ;
 		virtual antlrcpp::Any visitWhileDo(ifccParser::WhileDoContext *ctx) override ;
 		virtual antlrcpp::Any visitFn(ifccParser::FnContext *ctx) override ;
-
-
+		virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override ;
+		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
+		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
     std::map<std::string, int> vars;
 		int jumps;
 		void setError(bool val);
 		bool getError();
 		void setWarning(bool val);
 		bool getWarning();
-		private:
-			bool warning;
-			bool error;
-	};
-
-
-
-
-
+	private:
+		bool warning;
+		bool error;
+};

@@ -4,10 +4,13 @@ axiom: prog;
 
 prog: fn+;
 fn: TYPE VARNAME '(' argsDef? ')' '{' content '}';
-content: (init | ifElse | whileDo | returnValue) content?;
+content: (init | affectation | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME;
 returnValue: 'return' value ';';
-init: TYPE VARNAME '=' expression ';';
+init: TYPE declaration; 
+declaration: dec (',' dec)* ';' ; 
+dec: VARNAME ('=' expression)? ;
+affectation: VARNAME '=' expression ';' # affectationExpr;
 expression:
 	expression '*' expression # expressionMult
 	| expression '/' expression # expressionDiv
@@ -20,6 +23,7 @@ expression:
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
+	| '(' expression ')' # expressionPar
 	| VARNAME '(' args? ')' # expressionFn
 	| value # expressionValue;
 ifElse: 'if' '(' expression ')' '{' content '}' ( 'else' '{' content '}' )?;

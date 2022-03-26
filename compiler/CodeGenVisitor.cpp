@@ -1,4 +1,6 @@
 #include "CodeGenVisitor.h"
+#include <utility>
+#include <vector>
 using namespace std;
 
 static const string START_MAC = ".globl	_main\n_main:\n";
@@ -35,6 +37,7 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
+	// TODO: test visitChildren(ctx);
 	ifccParser::InitContext * initContext = ctx->init();
 	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
 	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
@@ -62,17 +65,90 @@ antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 {
+	// we assume that type is INT for now
 	string type = ctx->TYPE()->getText();
+	// ctx->declaration() --> contexte de vector
+	//  visit(ctx->declaration()) --> renvoie un vector
+	vector<pair<string, string>> vectorVars = visit(ctx->declaration());
+	for (auto paire : vectorVars)
+	{
+		string varname = paire.first;
+		// type = INT
+		int index = (this->vars.size() + 1) * 8;
+		// if varname already exists in vars, then it's an error
+		if (vars.find(varname) == vars.end())
+		{
+			this->vars[varname] = index;
+			// look for the value and cout ASSEMBLY code
+			if (paire.second != "")
+			{
+				string value = paire.second;
+				cout << "\tmovl " + value + ", " << EAX << endl;
+				cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+
+			}
+		}
+		else
+		{
+			// TODO : print the error
+			error = true;
+		}
+	}
+
+return 0;
+}
+
+antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
+{
+	// string type = ctx->TYPE()->getText();
+	vector<pair<string, string>> vectorVars;
+	for (auto contexte : ctx->dec())
+	{
+		// get the result of visitDec, ie: pair
+		pair<string, string> paire = visit(contexte);
+		// push into the vector
+		vectorVars.push_back(paire);
+	}
+	return vectorVars;
+}
+
+antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
+{
 	string varname = ctx->VARNAME()->getText();
+	string value;
+	if (ctx->expression())
+	{
+		value = visit(ctx->expression()).as<string>();
+	}
+	else
+	{
+		value = "";
+	}
+
+	pair<string, string> paire;
+	paire.first = varname;
+	paire.second = value;
+	return paire;
+}
+
+antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
+{
+	// getting the variable 
+	string varname = ctx->VARNAME()->getText();
+	// getting the variable/const by using the expressionValue visitor
 	string value = visit(ctx->expression()).as<string>();
-	int index = (this->vars.size() + 1) * 8;
-	if (vars.find(varname) == vars.end()) {
-		this->vars[varname] = index;
+	string index;
+	// check if the variable was already declared
+	if (vars.find(varname) != vars.end()){
+		index = to_string(this->vars[varname]);
+		// apply the direct assignment
+		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
-	  cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
 	} else {
+		// set an error
 		error = true;
 	}
 	return 0;
@@ -227,6 +303,11 @@ antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext 
 	string regval = getNewTempVariable();
 	cout << "\tmovl " << EAX << ", " << regval << endl;
 	return regval;
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContext *ctx)
+{
+	return visit(ctx->expression()).as<string>();
 }
 
 antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx) 
