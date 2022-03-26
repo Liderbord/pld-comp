@@ -2,24 +2,19 @@ grammar ifcc;
 
 axiom: prog;
 
-prog:
-	TYPE 'main' '(' ')' '{' content RETURN value ';' '}'
-	| TYPE 'main' '(' ')' '{' RETURN value ';' '}';
+prog: fn+;
+fn: TYPE VARNAME '(' argsDef? ')' '{' content '}';
+content: (init | affectation | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME;
-
-content: (init | affectation) content?;
-
+returnValue: 'return' value ';';
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
-
 affectation: VARNAME '=' expression ';' # affectationExpr;
-
 expression:
 	expression '*' expression # expressionMult
 	| expression '/' expression # expressionDiv
 	| expression '+' expression # expressionAdd
-	| '(' expression ')' # expressionPar
 	| expression '-' expression # expressionSub
 	| expression '&=' expression # expressionAnd
 	| expression '|=' expression # expressionOr
@@ -28,11 +23,14 @@ expression:
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
+	| '(' expression ')' # expressionPar
+	| VARNAME '(' args? ')' # expressionFn
 	| value # expressionValue;
+ifElse: 'if' '(' expression ')' '{' content '}' ( 'else' '{' content '}' )?;
+whileDo: 'while' '(' expression ')' '{' content '}';
+args: (expression) (',' expression)*;
+argsDef: (TYPE VARNAME) (',' TYPE VARNAME)*;
 
-	 
-
-RETURN: 'return';
 CONST: [0-9]+;
 COMMENT: '/*' .*? '*/' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
