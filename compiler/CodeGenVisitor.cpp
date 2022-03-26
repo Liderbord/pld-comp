@@ -17,6 +17,22 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 	return 0;
 }
 
+antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx) 
+{
+	string head;
+	string fnName = ctx->VARNAME()->getText();
+	#ifdef __APPLE__
+		head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
+	#else
+		head = ".globl	" + fnName + "\n" + fnName + ":\n";
+	#endif
+	cout << head << STACK << endl;
+	cout << "\t# content" << endl;
+	visit(ctx->content());
+	cout << END << endl;
+	return 0;
+}
+
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
 	ifccParser::InitContext * initContext = ctx->init();
@@ -242,21 +258,6 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	visit(ctx->content());
 	cout << "\tjmp " << jumpCondition << endl;
 	cout << jumpEnd << ":" << endl;
-	return 0;
-}
-
-antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx) 
-{
-	string head;
-	string fnName = ctx->VARNAME()->getText();
-	#ifdef __APPLE__
-		head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
-	#else
-		head = ".globl	" + fnName + "\n" + fnName + ":\n";
-	#endif
-	cout << head << STACK << endl;
-	visit(ctx->content());
-	cout << END << endl;
 	return 0;
 }
 

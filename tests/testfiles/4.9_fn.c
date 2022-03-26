@@ -1,8 +1,9 @@
-int hello( ) {
-    return 3;
+int hello() {
+    int a = 5;
+    return a;
 }
 
-int main( ) {
+int main() {
     int x = hello();
     return x;
 }
