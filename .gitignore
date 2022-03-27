@@ -61,7 +61,7 @@ compiler/build/
 compiler/generated/
 compiler/pre
 .DS_Store
-
+dump.txt
 
 tests/ifcc-test-output
 ifcc
