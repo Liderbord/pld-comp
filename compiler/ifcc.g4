@@ -39,3 +39,4 @@ DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 ARITH: '+' | '-' | '*' | '/' | '%';
 TYPE: 'int' | 'char';
+VARNAME: [a-zA-Z_][a-zA-Z0-9_]*;

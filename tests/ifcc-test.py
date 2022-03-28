@@ -222,4 +222,4 @@ for jobname in jobs:
         continue
 
     ## last but not least
-print(f"{text_color.OKGREEN} OK{text_color.ENDC} - {jobname}")
+    print(f"{text_color.OKGREEN} OK - {jobname}{text_color.ENDC}")
