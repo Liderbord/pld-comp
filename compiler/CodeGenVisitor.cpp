@@ -181,6 +181,7 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 			//arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
 			string value = ctx->CONST(i)->getText();
 			// moving the values to the stack
+			cout << "\t# Moving $ " << value << " to its location in the stack" << endl;
 			cout << "\tmovl $" + value + ", -" + to_string( index - (i-1)*8 ) + "(%rbp)" << endl;
 		}
 	}
@@ -190,6 +191,39 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 	}
 	return 0;
 }
+
+
+antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
+{
+	/*
+	// getting the Array's variable name
+	string tabName = ctx->TYPE()->getText();
+	// getting the variable/const by using the Value visitor
+	string value = visit(ctx->value()).as<string>();
+
+	//check if the table has already been declared
+	string expr = visit(ctx->expression()).as<string>();
+	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
+	{
+		// get the destination index of the array
+		int index = (vars[tabName]);
+		// TODO : Check if value > size of array, if its the case -> then its an error
+		cout << "\tmovl " + value + ", " << EAX << endl;
+		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
+
+	}
+	else
+	{
+   		error = true;
+	}
+	
+	
+
+*/
+	return 0;
+
+}
+
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {

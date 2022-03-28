@@ -35,6 +35,8 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
 		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
 		virtual antlrcpp::Any visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx) override ;
+		virtual antlrcpp::Any visitAffectationArray(ifccParser::AffectationArrayContext *ctx) override ;
+		
 
     std::map<std::string, int> vars;
 	vector<string> tabOfArrays;

@@ -11,7 +11,9 @@ returnValue: 'return' value ';';
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
-affectation: VARNAME '=' expression ';' # affectationExpr;
+
+affectation: VARNAME '=' expression ';' # affectationExpr
+	| VARNAME '[' value ']' '=' expression ';' #affectationArray;
 
 
 arrayDec: TYPE VARNAME '['CONST']'  ('=' '{' CONST (',' CONST)* '}' )?  ';' #arrayDeclaration ;
