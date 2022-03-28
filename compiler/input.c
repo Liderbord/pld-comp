@@ -1,4 +1,4 @@
 int main() {
-    int a = 42, b=36, c;
+    int a[2] = {3, 5};
     return 0;
 }

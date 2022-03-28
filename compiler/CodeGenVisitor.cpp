@@ -37,11 +37,12 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	// TODO: test visitChildren(ctx);
-	ifccParser::InitContext * initContext = ctx->init();
+	visitChildren(ctx);
+	/*ifccParser::InitContext * initContext = ctx->init();
 	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
 	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
 	ifccParser::ReturnValueContext * returnValueContext = ctx->returnValue();
+	ifccParser::ReturnrrayDeclaration * 
 	if (initContext) {
 		visit(initContext);
 	} else if (ifElseContext) {
@@ -54,7 +55,7 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 	ifccParser::ContentContext * contentContext = ctx->content();
 	if (contentContext) {
 		visit(contentContext);
-	}
+	}*/
 	return 0;
 }
 
@@ -149,6 +150,42 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
 	} else {
 		// set an error
+		error = true;
+	}
+	return 0;
+}
+
+
+antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
+{
+	// we assume that type is INT for now
+	string type = ctx->TYPE()->getText();
+	// getting the name of the array, CONST is a non-terminal symbol, so no visit
+	string tabName = ctx->VARNAME()->getText();
+	// getting its length, which is in CONST()[0]
+	int length = stoi(ctx->CONST(0)->getText()); 
+	// getting the number of declared values
+	int nbrValues = ctx->CONST().size() - 1;
+	// array of values
+	vector<int> ArrayVal;
+	// check that lengths are coherent
+	if (length >= nbrValues)
+	{
+		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
+		int index = (this->vars.size() + length) * 8;
+		this->vars[tabName] = index;
+		// pusing tabName in the tab of arrays
+		tabOfArrays.push_back(tabName);
+
+		for (int i=1; i<=nbrValues; i++){
+			//arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
+			string value = ctx->CONST(i)->getText();
+			// moving the values to the stack
+			cout << "\tmovl $" + value + ", -" + to_string( index - (i-1)*8 ) + "(%rbp)" << endl;
+		}
+	}
+	else 
+	{
 		error = true;
 	}
 	return 0;
