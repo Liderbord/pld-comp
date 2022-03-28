@@ -1,3 +1,5 @@
+grammar ifcc;
+
 axiom: prog;
 
 prog: fn+;
@@ -29,7 +31,6 @@ ifElse:
 whileDo: 'while' '(' expression ')' '{' content '}';
 args: (expression) (',' expression)*;
 argsDef: (TYPE VARNAME) (',' TYPE VARNAME)*;
-
 CONST: [0-9]+;
 ADDSUB: '+' | '-';
 MULTDIV: '*' | '/';
