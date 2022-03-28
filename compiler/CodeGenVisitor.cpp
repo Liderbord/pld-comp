@@ -60,6 +60,7 @@ antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 
 antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx)
 {
+	
 	string value = visit(ctx->value()).as<string>();
 	cout << "\t" << "movl " << value << ", %eax" << endl;
 	return 0;
@@ -78,9 +79,10 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		// type = INT
 		int index = (this->vars.size() + 1) * 8;
 		// if varname already exists in vars, then it's an error
-		if (vars.find(varname) == vars.end())
+		if (varsError.find(varname) == varsError.end())
 		{
-			this->vars[varname] = index;
+			mapWarnings[varname] = 0;
+			this->varsError[varname] = index;
 			// look for the value and cout ASSEMBLY code
 			if (paire.second != "")
 			{
@@ -102,6 +104,7 @@ return 0;
 
 antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
 {
+	
 	// string type = ctx->TYPE()->getText();
 	vector<pair<string, string>> vectorVars;
 	for (auto contexte : ctx->dec())
@@ -116,6 +119,7 @@ antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *c
 
 antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 {
+	
 	string varname = ctx->VARNAME()->getText();
 	string value;
 	if (ctx->expression())
@@ -135,14 +139,16 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
 {
+	
 	// getting the variable 
 	string varname = ctx->VARNAME()->getText();
 	// getting the variable/const by using the expressionValue visitor
 	string value = visit(ctx->expression()).as<string>();
 	string index;
 	// check if the variable was already declared
-	if (vars.find(varname) != vars.end()){
-		index = to_string(this->vars[varname]);
+	if (varsError.find(varname) == varsError.end()){
+		mapWarnings[varname] = 1;
+		index = to_string(this->varsError[varname]);
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
@@ -156,6 +162,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {
+	
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
@@ -342,15 +349,9 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	return 0;
 }
 
-bool CodeGenVisitor::getWarning(){
-	return this->warning;
-}
+
 bool CodeGenVisitor::getError(){
 	return this->error;
-}
-
-void CodeGenVisitor::setWarning(bool val){
-	this->warning=val;
 }
 
 void CodeGenVisitor::setError(bool val){
