@@ -37,24 +37,8 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	// TODO: test visitChildren(ctx);
-	ifccParser::InitContext * initContext = ctx->init();
-	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
-	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
-	ifccParser::ReturnValueContext * returnValueContext = ctx->returnValue();
-	if (initContext) {
-		visit(initContext);
-	} else if (ifElseContext) {
-		visit(ifElseContext);
-	} else if (whileDoContext) {
-		visit(whileDoContext);
-	} else if (returnValueContext) {
-		visit(returnValueContext);
-	}
-	ifccParser::ContentContext * contentContext = ctx->content();
-	if (contentContext) {
-		visit(contentContext);
-	}
+	visitChildren(ctx);
+
 	return 0;
 }
 
@@ -62,6 +46,7 @@ antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *
 {
 	
 	string value = visit(ctx->value()).as<string>();
+	
 	cout << "\t" << "movl " << value << ", %eax" << endl;
 	return 0;
 }
@@ -146,14 +131,16 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	string value = visit(ctx->expression()).as<string>();
 	string index;
 	// check if the variable was already declared
-	if (varsError.find(varname) == varsError.end()){
+	if (varsError.find(varname) != varsError.end()){
 		mapWarnings[varname] = 1;
-		index = to_string(this->varsError[varname]);
+		index = to_string(this->vars[varname]);
+		
+
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else {
+	} else if (varsError.find(varname) == varsError.end()) {
 		// set an error
 		error = true;
 	}
