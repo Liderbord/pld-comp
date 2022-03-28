@@ -1,5 +1,3 @@
-grammar ifcc;
-
 axiom: prog;
 
 prog: fn+;
@@ -39,5 +37,4 @@ COMMENT: '/*' .*? '*/' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 ARITH: '+' | '-' | '*' | '/' | '%';
-TYPE: 'int' | 'float' | 'double';
-VARNAME: [a-zA-Z_][a-zA-Z0-9_]*; 
+TYPE: 'int' | 'char';
