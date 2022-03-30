@@ -170,7 +170,6 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	// check if the variable was already declared
 	if (this->isVarNoDeclarated(varname)){
 		mapWarnings[varname] = 1;
-		index = to_string(this->vars[varname]);
 		index = to_string(this->getVar(varname));
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
