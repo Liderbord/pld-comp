@@ -195,22 +195,39 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 
 antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
 {
-	/*
+	
 	// getting the Array's variable name
 	string tabName = ctx->TYPE()->getText();
 	// getting the variable/const by using the Value visitor
 	string value = visit(ctx->value()).as<string>();
+	//value = value*8;
+
+	string expr = visit(ctx->expression()).as<string>();
+
+	// create temp var
+	string temp = getNewTempVariable();
 
 	//check if the table has already been declared
-	string expr = visit(ctx->expression()).as<string>();
+	
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
 		// get the destination index of the array
-		int index = (vars[tabName]);
+		int index = to_string(this->vars[varname]);
 		// TODO : Check if value > size of array, if its the case -> then its an error
-		cout << "\tmovl " + value + ", " << EAX << endl;
-		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-
+		//mult
+		cout << "\tmovl $8 , " + temp << endl;
+		cout << "\timull " + value + ", " + temp << endl;
+		cout << "\tmovl " + index + ", " << EAX << endl;
+		cout << "\tadd " + value + ", " << EAX << endl;
+		cout << "\tmovl " + EAX + ", " << temp << endl;
+		cout << "\tmovl %rbp, %rax" << endl;
+		cout << "\taddl " + temp + " , %rax" << endl;
+		cout << "\tmovl %rax, " + temp << endl;
+		cout << "\tmovl " + temp + " , %rax" << endl;
+		cout << "\tmovl " + temp + ", %rax" << endl;
+		cout << "\tmovl expr, %r10" << endl;
+		cout << "\tmovl %r10, (%rax)" << endl;
+		
 	}
 	else
 	{
@@ -219,7 +236,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	
 	
 
-*/
+
 	return 0;
 
 }
