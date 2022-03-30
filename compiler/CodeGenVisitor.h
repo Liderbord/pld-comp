@@ -40,6 +40,8 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 
     std::map<std::string, int> vars;
 	vector<string> tabOfArrays;
+	int maxOffset;
+	
 		int jumps;
 		void setError(bool val);
 		bool getError();

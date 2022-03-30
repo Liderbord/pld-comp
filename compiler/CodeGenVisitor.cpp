@@ -11,8 +11,13 @@ static const string EAX = "%eax";
 static const string ECX = "%ecx";
 static const string EDX = "%edx";
 
+
+
+
+
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
+	maxOffset = 0;
 	for (auto fn : ctx->fn()) {
 		visit(fn);
 	}
@@ -77,7 +82,9 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	{
 		string varname = paire.first;
 		// type = INT
-		int index = (this->vars.size() + 1) * 8;
+		
+		int index = maxOffset + 8;
+		maxOffset = index;
 		// if varname already exists in vars, then it's an error
 		if (vars.find(varname) == vars.end())
 		{
@@ -171,8 +178,10 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 	// check that lengths are coherent
 	if (length >= nbrValues)
 	{
+		
 		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
-		int index = (this->vars.size() + length) * 8;
+		int index = maxOffset + length * 8;
+		maxOffset = index;
 		this->vars[tabName] = index;
 		// pusing tabName in the tab of arrays
 		tabOfArrays.push_back(tabName);
@@ -197,7 +206,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 {
 	
 	// getting the Array's variable name
-	string tabName = ctx->TYPE()->getText();
+	string tabName = ctx->VARNAME()->getText();
 	// getting the variable/const by using the Value visitor
 	string value = visit(ctx->value()).as<string>();
 	//value = value*8;
@@ -212,20 +221,19 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
 		// get the destination index of the array
-		int index = to_string(this->vars[varname]);
+		string index = to_string(this->vars[tabName]);
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
 		cout << "\tmovl $8 , " + temp << endl;
 		cout << "\timull " + value + ", " + temp << endl;
-		cout << "\tmovl " + index + ", " << EAX << endl;
+		cout << "\tmovl $-" + index + ", " << EAX << endl;
 		cout << "\tadd " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", " << temp << endl;
 		cout << "\tmovl %rbp, %rax" << endl;
 		cout << "\taddl " + temp + " , %rax" << endl;
 		cout << "\tmovl %rax, " + temp << endl;
 		cout << "\tmovl " + temp + " , %rax" << endl;
-		cout << "\tmovl " + temp + ", %rax" << endl;
-		cout << "\tmovl expr, %r10" << endl;
+		cout << "\tmovl " + expr + ", %r10" << endl;
 		cout << "\tmovl %r10, (%rax)" << endl;
 		
 	}
@@ -257,7 +265,9 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 }
 
 string CodeGenVisitor::getNewTempVariable() {
-	int index = (this->vars.size() + 1) * 8;
+	// replace 
+	int index = this->maxOffset +8;
+	this->maxOffset = index;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->vars[varname] = index;
