@@ -4,6 +4,12 @@
 #include "generated/ifccBaseVisitor.h"
 using namespace std;
 
+struct Variable
+{
+	int index;
+	string type;
+}
+
 class CodeGenVisitor : public ifccBaseVisitor
 {
 public:
@@ -35,7 +41,7 @@ public:
 	virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override;
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
-	std::map<std::string, std::map<std::string, int>> vars;
+	std::map<std::string, std::map<std::string, Variable>> vars;
 	std::map<std::string, int> varsError;
 	std::map<std::string, int> mapWarnings;
 	int jumps;
@@ -45,9 +51,10 @@ public:
 	bool getWarning();
 	void setCurrentFunction(std::string name);
 	std::string getCurrentFunction();
-	std::map<std::string, int> getVars();
-	void setVar(std::string varname, int index);
-	int getVar(std::string varname);
+	std::map<std::string, Variable> getVars();
+	void setVar(std::string varname, int index, string type);
+	Variable getVar(std::string varname);
+	int getVarIndex(std::string varname);
 	bool isVarNoDeclarated(string varname);
 
 private:
