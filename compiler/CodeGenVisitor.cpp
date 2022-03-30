@@ -89,7 +89,6 @@ return 0;
 
 antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
 {
-	
 	// string type = ctx->TYPE()->getText();
 	vector<pair<string, string>> vectorVars;
 	for (auto contexte : ctx->dec())
