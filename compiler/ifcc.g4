@@ -34,6 +34,7 @@ argsDef: (TYPE VARNAME) (',' TYPE VARNAME)*;
 CONST: [0-9]+;
 ADDSUB: '+' | '-';
 MULTDIV: '*' | '/';
+CHAR: '\'' .? '\'';
 COMMENT: '/*' .*? '*/' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);

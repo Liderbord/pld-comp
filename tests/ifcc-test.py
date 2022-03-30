@@ -213,7 +213,7 @@ for jobname in jobs:
         
     command("./exe-ifcc","ifcc-execute.txt")
     if open("gcc-execute.txt").read() != open("ifcc-execute.txt").read() :
-        print(f"{text_color.FAIL}FAIL{text_color.ENDC} - {jobname}\n(different results at execution)")
+        print(f"{text_color.FAIL}FAIL - {jobname}{text_color.ENDC}\n(different results at execution)")
         if args.verbose:
             print("GCC:")
             dumpfile("gcc-execute.txt")

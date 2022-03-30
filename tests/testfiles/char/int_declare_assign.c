@@ -1,5 +1,5 @@
 int main()
 {
-    char a = 'b';
+    int a = 'b';
     return a;
 }
