@@ -75,7 +75,12 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 	}
 	
 	cout << "\t# content" << endl;
-	visit(ctx->content());
+	ifccParser::ContentContext * contentContext = ctx->content();
+	if (contentContext) {
+		visit(contentContext);
+	} else {
+		cout << "\txorl	%eax, %eax" << endl;
+	}
 	cout << END << endl;
 	return 0;
 }
@@ -168,14 +173,14 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	string value = visit(ctx->expression()).as<string>();
 	string index;
 	// check if the variable was already declared
-	if (this->isVarNoDeclarated(varname)){
+	if (!this->isVarNoDeclarated(varname)){
 		mapWarnings[varname] = 1;
 		index = to_string(this->getVar(varname));
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else if (varsError.find(varname) == varsError.end()) {
+	} else {
 		// set an error
 		error = true;
 	}
@@ -338,16 +343,32 @@ antlrcpp::Any CodeGenVisitor::visitExpressionPar(ifccParser::ExpressionParContex
 antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx) 
 {
 	string expval = visit(ctx->expression()).as<string>();
+	ifccParser::ContentContext * elseContentContext = ctx->content(1);
 	this->jumps++;
-	string jump = "LBB0_" + to_string(this->jumps);
-	cout << "\tcmpl $0, " << expval << endl;
-	cout << "\tje " << jump << endl;
-	visit(ctx->content(0));
-	cout << jump << ":" << endl;
-	ifccParser::ContentContext * contentContext = ctx->content(1);
-	if (contentContext) {
-		visit(contentContext);
+	string jumpEndIf = "LBB0_" + to_string(this->jumps);
+	cout << "\tmovl " << expval << ", " << EAX << endl;
+	cout << "\tcmpl $0, " << EAX << endl;
+	if (elseContentContext) {
+		this->jumps++;
+		string jumpElse = "LBB0_" + to_string(this->jumps);
+		cout << "\tje " << jumpElse << endl;
+		ifccParser::ContentContext * contentContext = ctx->content(0);
+		if (contentContext) {
+			visit(ctx->content(0));
+		}
+		cout << "\tjmp " << jumpEndIf << endl;
+		cout << jumpElse << ":" << endl;
+		visit(elseContentContext);
+		cout << "\tjmp " << jumpEndIf << endl;
+	} else {
+		cout << "\tje " << jumpEndIf << endl;	
+		ifccParser::ContentContext * contentContext = ctx->content(0);
+		if (contentContext) {
+			visit(ctx->content(0));
+		}
+		cout << "\tjmp " << jumpEndIf << endl;
 	}
+	cout << jumpEndIf << ":" << endl;
 	return 0;
 }
 

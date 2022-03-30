@@ -3,7 +3,7 @@ grammar ifcc;
 axiom: prog;
 
 prog: fn+;
-fn: TYPE VARNAME '(' argsDef? ')' '{' content '}';
+fn: TYPE VARNAME '(' argsDef? ')' '{' content? '}';
 content: (init | affectation | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME;
 returnValue: 'return' expression ';';
@@ -24,7 +24,7 @@ expression:
 	| '(' expression ')' # expressionPar
 	| VARNAME '(' args? ')' # expressionFn
 	| value # expressionValue;
-ifElse: 'if' '(' expression ')' '{' content '}' ( 'else' '{' content '}' )?;
+ifElse: 'if' '(' expression ')' '{' content? '}' ( 'else' '{' content? '}' )?;
 whileDo: 'while' '(' expression ')' '{' content '}';
 args: (expression) (',' expression)*;
 argsDef: (TYPE VARNAME) (',' TYPE VARNAME)*;
@@ -33,6 +33,7 @@ CONST: [0-9]+;
 ADDSUB: '+' | '-';
 MULTDIV: '*' | '/';
 COMMENT: '/*' .*? '*/' -> skip;
+ONELINECOMMENT: '//' .*? '\n' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 ARITH: '+' | '-' | '*' | '/' | '%';
