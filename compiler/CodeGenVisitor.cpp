@@ -109,6 +109,8 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		// if varname already exists in vars, then it's an error
 		if (this->isVarNoDeclarated(varname)) {
 			this->setVar(varname, index);
+			mapWarnings[varname] = 0;
+			this->varsError[varname] = index;
 			// look for the value and cout ASSEMBLY code
 			if (paire.second != "")
 			{
@@ -167,12 +169,14 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	string index;
 	// check if the variable was already declared
 	if (this->isVarNoDeclarated(varname)){
+		mapWarnings[varname] = 1;
+		index = to_string(this->vars[varname]);
 		index = to_string(this->getVar(varname));
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else {
+	} else if (varsError.find(varname) == varsError.end()) {
 		// set an error
 		error = true;
 	}
@@ -364,15 +368,9 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	return 0;
 }
 
-bool CodeGenVisitor::getWarning(){
-	return this->warning;
-}
+
 bool CodeGenVisitor::getError(){
 	return this->error;
-}
-
-void CodeGenVisitor::setWarning(bool val){
-	this->warning=val;
 }
 
 void CodeGenVisitor::setError(bool val){

@@ -35,6 +35,8 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
 		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
     std::map<std::string, std::map<std::string, int>> vars;
+		std::map<std::string, int> varsError;
+		std::map<std::string, int> mapWarnings;
 		int jumps;
 		void setError(bool val);
 		bool getError();
@@ -47,7 +49,6 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		int getVar(std::string varname);
 		bool isVarNoDeclarated(string varname);
 	private:
-		bool warning;
 		bool error;
 		std::string currentFunction;
 };
