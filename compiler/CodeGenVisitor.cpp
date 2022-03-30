@@ -122,7 +122,6 @@ antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprContext *ctx)
 {
-	
 	// getting the variable 
 	string varname = ctx->VARNAME()->getText();
 	// getting the variable/const by using the expressionValue visitor
