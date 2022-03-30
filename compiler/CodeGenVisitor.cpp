@@ -146,7 +146,6 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {
-	
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
 	if (varnameNode) {
