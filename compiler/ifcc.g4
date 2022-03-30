@@ -14,13 +14,15 @@ affectation: VARNAME '=' expression ';' # affectationExpr;
 expression:
 	expression MULTDIV expression # expressionMultDiv
 	| expression ADDSUB expression # expressionAddSub
-	| expression '&=' expression # expressionAnd
-	| expression '|=' expression # expressionOr
+	| expression ('&=' | '&&') expression # expressionAnd
+	| expression ('|=' | '||') expression # expressionOr
 	| expression '^=' expression # expressionXor
 	| expression '==' expression # expressionEqual
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
 	| expression '<' expression # expressionLess
+	| expression '>=' expression # expressionGreaterEqual
+	| expression '<=' expression # expressionLessEqual
 	| '(' expression ')' # expressionPar
 	| VARNAME '(' args? ')' # expressionFn
 	| value # expressionValue;

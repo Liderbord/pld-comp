@@ -304,10 +304,24 @@ antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreat
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
-	return operationCompExpression(leftval, rightval, "ge");
+	return operationCompExpression(leftval, rightval, "g");
 }
 
 antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "l");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionGreaterEqual(ifccParser::ExpressionGreaterEqualContext *ctx) 
+{
+	string leftval = visit(ctx->expression(0)).as<string>();
+	string rightval = visit(ctx->expression(1)).as<string>();
+	return operationCompExpression(leftval, rightval, "ge");
+}
+
+antlrcpp::Any CodeGenVisitor::visitExpressionLessEqual(ifccParser::ExpressionLessEqualContext *ctx) 
 {
 	string leftval = visit(ctx->expression(0)).as<string>();
 	string rightval = visit(ctx->expression(1)).as<string>();
