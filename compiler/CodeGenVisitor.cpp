@@ -103,7 +103,6 @@ antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *c
 
 antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 {
-	
 	string varname = ctx->VARNAME()->getText();
 	string value;
 	if (ctx->expression())
