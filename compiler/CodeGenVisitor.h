@@ -34,13 +34,12 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override ;
 		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
 		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
-    std::map<std::string, int> vars;
+    	std::map<std::string, int> vars;
+		std::map<std::string, int> varsError;
+		std::map<std::string, int> mapWarnings;
 		int jumps;
 		void setError(bool val);
 		bool getError();
-		void setWarning(bool val);
-		bool getWarning();
 	private:
-		bool warning;
 		bool error;
 };

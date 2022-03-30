@@ -37,30 +37,16 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	// TODO: test visitChildren(ctx);
-	ifccParser::InitContext * initContext = ctx->init();
-	ifccParser::IfElseContext * ifElseContext = ctx->ifElse();
-	ifccParser::WhileDoContext * whileDoContext = ctx->whileDo();
-	ifccParser::ReturnValueContext * returnValueContext = ctx->returnValue();
-	if (initContext) {
-		visit(initContext);
-	} else if (ifElseContext) {
-		visit(ifElseContext);
-	} else if (whileDoContext) {
-		visit(whileDoContext);
-	} else if (returnValueContext) {
-		visit(returnValueContext);
-	}
-	ifccParser::ContentContext * contentContext = ctx->content();
-	if (contentContext) {
-		visit(contentContext);
-	}
+	visitChildren(ctx);
+
 	return 0;
 }
 
 antlrcpp::Any  CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *ctx)
 {
+	
 	string value = visit(ctx->value()).as<string>();
+	
 	cout << "\t" << "movl " << value << ", %eax" << endl;
 	return 0;
 }
@@ -78,9 +64,10 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		// type = INT
 		int index = (this->vars.size() + 1) * 8;
 		// if varname already exists in vars, then it's an error
-		if (vars.find(varname) == vars.end())
+		if (varsError.find(varname) == varsError.end())
 		{
-			this->vars[varname] = index;
+			mapWarnings[varname] = 0;
+			this->varsError[varname] = index;
 			// look for the value and cout ASSEMBLY code
 			if (paire.second != "")
 			{
@@ -141,13 +128,16 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	string value = visit(ctx->expression()).as<string>();
 	string index;
 	// check if the variable was already declared
-	if (vars.find(varname) != vars.end()){
+	if (varsError.find(varname) != varsError.end()){
+		mapWarnings[varname] = 1;
 		index = to_string(this->vars[varname]);
+		
+
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
 		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
-	} else {
+	} else if (varsError.find(varname) == varsError.end()) {
 		// set an error
 		error = true;
 	}
@@ -342,15 +332,9 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	return 0;
 }
 
-bool CodeGenVisitor::getWarning(){
-	return this->warning;
-}
+
 bool CodeGenVisitor::getError(){
 	return this->error;
-}
-
-void CodeGenVisitor::setWarning(bool val){
-	this->warning=val;
 }
 
 void CodeGenVisitor::setError(bool val){
