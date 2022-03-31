@@ -17,6 +17,7 @@ static const string EDX = "%edx";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
+	// initialize 
 	maxOffset = 0;
 	for (auto fn : ctx->fn()) {
 		visit(fn);
@@ -224,17 +225,15 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		string index = to_string(this->vars[tabName]);
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
-		cout << "\tmovl $8 , " + temp << endl;
-		cout << "\timull " + value + ", " + temp << endl;
-		cout << "\tmovl $-" + index + ", " << EAX << endl;
-		cout << "\tadd " + value + ", " << EAX << endl;
-		cout << "\tmovl " + EAX + ", " << temp << endl;
-		cout << "\tmovl %rbp, %rax" << endl;
-		cout << "\taddl " + temp + " , %rax" << endl;
-		cout << "\tmovl %rax, " + temp << endl;
-		cout << "\tmovl " + temp + " , %rax" << endl;
-		cout << "\tmovl " + expr + ", %r10" << endl;
-		cout << "\tmovl %r10, (%rax)" << endl;
+		cout << "\tmovq $8 , " + temp << endl;
+		cout << "\timulq " + value + ", " + temp << endl;
+		cout << "\taddq $-" + index + ", " << temp << endl;
+		cout << "\tmovq %rbp, %rax" << endl;
+		cout << "\taddq " + temp + " , %rax" << endl;
+		cout << "\tmovq %rax, " + temp << endl;
+		cout << "\tmovq " + temp + " , %rax" << endl;
+		cout << "\tmovq " + expr + ", %r10" << endl;
+		cout << "\tmovq %r10, (%rax)" << endl;
 		
 	}
 	else
