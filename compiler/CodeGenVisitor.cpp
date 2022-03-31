@@ -225,9 +225,10 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		string index = to_string(this->vars[tabName]);
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
-		cout << "\tmovq $8 , " + temp << endl;
-		cout << "\timulq " + value + ", " + temp << endl;
-		cout << "\taddq $-" + index + ", " << temp << endl;
+		cout << "\tmovq $8 , %rax" << endl;
+		cout << "\timulq " + value + ", %rax"<< endl;
+		cout << "\taddq $-" + index + ", %rax" << endl;
+		cout << "\tmovq %rax, " + temp << endl;
 		cout << "\tmovq %rbp, %rax" << endl;
 		cout << "\taddq " + temp + " , %rax" << endl;
 		cout << "\tmovq %rax, " + temp << endl;
