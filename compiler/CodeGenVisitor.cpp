@@ -91,6 +91,13 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 #endif
 	cout << head << STACK << endl;
 
+	// if there's more than one function and the current function is not the first one
+	// move the RSP by 16 bytes to make space (standard)
+	if (this->functions.size() > 1)
+	{
+		cout << "\tsubq	$16, %rsp" << endl;
+	}
+
 	// visit the arguments of the function, if there are any
 	ifccParser::ArgsDefContext *argsDefContext = ctx->argsDef();
 	if (argsDefContext)
@@ -111,6 +118,13 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 	{
 		cout << "\txorl	%eax, %eax" << endl;
 	}
+
+	// if we moved the RSP at the beggining of the function, move it back
+	if (this->functions.size() > 1)
+	{
+		cout << "\taddq	$16, %rsp" << endl;
+	}
+
 	cout << END << endl;
 	return 0;
 }
@@ -161,7 +175,6 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 {
-	// we assume that type is INT TODO: add char
 	string type = ctx->TYPE()->getText();
 	// get all the declaration in the line
 	vector<pair<string, ifccParser::ExpressionContext *>> vectorVars = visit(ctx->declaration());
@@ -176,13 +189,9 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 			// save the variable in the stack of the current function
 			this->setVar(varname, index, type);
 			// if there's an expression (initial value), visit the expression and set it to the variable
-			// if there's no expression, set the variable to the default value:
-			// if the type is INT, set it to 0
-			// TODO: if the type is CHAR, set it to ?
+			// if there's no expression, set the variable to the default value
 			string value = pair.second ? visit(pair.second).as<string>() : "$0";
 			cout << "\t# declare " << type << " and assign " << value << endl;
-			cout << MOVL + value + ", " << EAX << endl;
-			cout << MOVL + EAX + ", -" + to_string(index) + RBP << endl;
 			cout << "\t" + getMove(type) + " " + value + ", " << getRegister(type) << endl;
 			cout << "\t" + getMove(type) + " " + getRegister(type) + ", -" + to_string(index) + "(%rbp)" << endl;
 		}
@@ -745,24 +754,29 @@ antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueCo
 
 /************************* HELPERS ****************************/
 
-// TODO: add def
+/**
+ * @brief get the respective register (AL, EAX) for the given type (CHAR, INT)
+ *
+ * @param type
+ * @return string
+ */
 
 string CodeGenVisitor::getRegister(string type)
 {
-	if (type == "char")
-	{
-		return AL;
-	}
-	return EAX;
+	return type == "char" ? AL : EAX;
 }
+
+/**
+ * @brief get the respective assembly Instruction (movl, movb)
+ * 				for the given type (CHAR, INT)
+ *
+ * @param type
+ * @return string
+ */
 
 string CodeGenVisitor::getMove(string type)
 {
-	if (type == "char")
-	{
-		return "movb";
-	}
-	return "movl";
+	return type == "char" ? "movb" : "movl";
 }
 
 /**
