@@ -255,8 +255,8 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 		// set the direct assignment
 		Variable var = this->getVar(varname);
 		cout << "\t# assigning " << value << " to " << varname << endl;
-		cout << "\t" + this->getMove(var.type) + " " + value + ", " << EAX << endl;
-		cout << "\t" + this->getMove(var.type) + " " + EAX + ", -" + to_string(var.index) + "(%rbp)" << endl;
+		cout << "\t" + this->getMove(var.type) << " " << value << ", " << this->getRegister(var.type) << endl;
+		cout << "\t" + this->getMove(var.type) << " " << this->getRegister(var.type) << ", -" << to_string(var.index) << RBP << endl;
 	}
 	else
 	{
