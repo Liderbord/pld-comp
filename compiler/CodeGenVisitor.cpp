@@ -210,9 +210,8 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
+antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
-	// cout << "made it here" << endl;
 	string returnval;
 	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
 	if (varnameNode)
@@ -222,10 +221,14 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 		returnval = "-" + index + "(%rbp)";
 		return returnval;
 	}
-	string character = ctx->CHAR()->getText();
+	antlr4::tree::TerminalNode *charNodes = ctx->CHAR();
 	// evaluate if the constant is a char
 	// if its a char convert it to its ascii value
-	return "$" + to_string(int(character[1]));
+	if (charNodes)
+	{
+		string character = charNodes->getText();
+		return "$" + to_string(int(character[1]));
+	}
 	// get the constant
 	string constant = ctx->CONST()->getText();
 	return "$" + constant;
