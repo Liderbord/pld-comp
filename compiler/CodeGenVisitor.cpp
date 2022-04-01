@@ -281,8 +281,17 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	if (varnameNode)
 	{
 		string varname = varnameNode->getText();
-		string index = to_string(this->getVar(varname));
-		returnval = "-" + index + RBP;
+		// if variable is declared, return it
+		if (!this->isVarNoDeclarated(varname))
+		{
+			returnval = "-" + to_string(this->getVar(varname)) + RBP;
+		}
+		// if variable is not declared, throw an error
+		else
+		{
+			cout << "# ERROR: variable " << varname << " not declared" << endl;
+			this->setError();
+		}
 	}
 	// if the value is a number, convert the number as string
 	// and assign it to returnval in the assembly format
