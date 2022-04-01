@@ -4,10 +4,9 @@ axiom: prog;
 
 prog: fn+;
 fn: TYPE VARNAME '(' argsDef? ')' '{' content '}';
-content: (init | affectation | ifElse | whileDo | arrayDec | returnValue) content?;
+content: (init | affectation | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME | VARNAME '[' expression ']';
-returnValue: 'return' value ';';
-
+returnValue: 'return' expression ';';
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
@@ -15,15 +14,11 @@ dec: VARNAME ('=' expression)? ;
 affectation: VARNAME '=' expression ';' # affectationExpr
 	| VARNAME '[' value ']' '=' expression ';' #affectationArray;
 
-
 arrayDec: TYPE VARNAME '['CONST']'  ('=' '{' CONST (',' CONST)* '}' )?  ';' #arrayDeclaration ;
 
-
 expression:
-	expression '*' expression # expressionMult
-	| expression '/' expression # expressionDiv
-	| expression '+' expression # expressionAdd
-	| expression '-' expression # expressionSub
+	expression MULTDIV expression # expressionMultDiv
+	| expression ADDSUB expression # expressionAddSub
 	| expression '&=' expression # expressionAnd
 	| expression '|=' expression # expressionOr
 	| expression '^=' expression # expressionXor
@@ -40,6 +35,8 @@ args: (expression) (',' expression)*;
 argsDef: (TYPE VARNAME) (',' TYPE VARNAME)*;
 
 CONST: [0-9]+;
+ADDSUB: '+' | '-';
+MULTDIV: '*' | '/';
 COMMENT: '/*' .*? '*/' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);

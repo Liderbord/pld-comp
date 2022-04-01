@@ -45,9 +45,16 @@ int main(int argn, const char **argv)
 
   
   CodeGenVisitor v;
-  v.visit(tree);
   v.setError(false);
-  v.setWarning(false);
+  v.visit(tree);
+  
+  map <string,int> :: iterator iterMAP;
+  for(iterMAP= v.mapWarnings.begin(); iterMAP != v.mapWarnings.end(); iterMAP++)
+  {
+    if(iterMAP->second == 0){
+      cout << "#WARNING: variable " << iterMAP->first << " is not used." << endl;
+    }
+  }
   if(v.getError()==true){
     return 1;
   }else{

@@ -14,10 +14,8 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override ;
 		virtual antlrcpp::Any visitValue(ifccParser::ValueContext *ctx) override ;
 		virtual antlrcpp::Any visitReturnValue(ifccParser::ReturnValueContext *ctx) override ;
-		virtual antlrcpp::Any visitExpressionMult(ifccParser::ExpressionMultContext *ctx) override ;
-		virtual antlrcpp::Any visitExpressionDiv(ifccParser::ExpressionDivContext *ctx) override ;
-		virtual antlrcpp::Any visitExpressionAdd(ifccParser::ExpressionAddContext *ctx) override ;
-		virtual antlrcpp::Any visitExpressionSub(ifccParser::ExpressionSubContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionMultDiv(ifccParser::ExpressionMultDivContext *ctx) override ;
+		virtual antlrcpp::Any visitExpressionAddSub(ifccParser::ExpressionAddSubContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionOr(ifccParser::ExpressionOrContext *ctx) override ;
 		virtual antlrcpp::Any visitExpressionXor(ifccParser::ExpressionXorContext *ctx) override ;
@@ -31,23 +29,30 @@ class  CodeGenVisitor : public ifccBaseVisitor {
 		virtual antlrcpp::Any visitIfElse(ifccParser::IfElseContext *ctx) override ;
 		virtual antlrcpp::Any visitWhileDo(ifccParser::WhileDoContext *ctx) override ;
 		virtual antlrcpp::Any visitFn(ifccParser::FnContext *ctx) override ;
+		virtual antlrcpp::Any visitArgs(ifccParser::ArgsContext *ctx) override ;
+		virtual antlrcpp::Any visitArgsDef(ifccParser::ArgsDefContext *ctx) override ;
 		virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override ;
 		virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override ;
 		virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override ;
 		virtual antlrcpp::Any visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx) override ;
 		virtual antlrcpp::Any visitAffectationArray(ifccParser::AffectationArrayContext *ctx) override ;
-		
-
-    std::map<std::string, int> vars;
-	vector<string> tabOfArrays;
-	int maxOffset;
-	
+    std::map<std::string, std::map<std::string, int>> vars;
+		std::map<std::string, int> varsError;
+		std::map<std::string, int> mapWarnings;
 		int jumps;
+		int maxOffset;
+		vector<string> tabOfArrays;
 		void setError(bool val);
 		bool getError();
 		void setWarning(bool val);
 		bool getWarning();
+		void setCurrentFunction(std::string name);
+		std::string getCurrentFunction();
+		std::map<std::string, int> getVars();
+		void setVar(std::string varname, int index);
+		int getVar(std::string varname);
+		bool isVarNoDeclarated(string varname);
 	private:
-		bool warning;
 		bool error;
+		std::string currentFunction;
 };
