@@ -408,6 +408,7 @@ string CodeGenVisitor::getNewTempVariable()
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->setVar(varname, index, "int");
+	this->setVarUsed(varname);
 	return "-" + indexString + RBP;
 }
 
@@ -669,7 +670,7 @@ antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx)
 }
 
 /**
- * @brief set a function call with its arguments, and return the register index
+ * @brief call a function, and return the register index
  * 				of the call's result as a temporal variable
  *
  * @param ifccParser::ExpressionFnContext ctx
@@ -678,8 +679,26 @@ antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext *ctx)
 {
+	visit(ctx->fnCall());
+	string regval = getNewTempVariable();
+	cout << MOVL << EAX << ", " << regval << endl;
+	return regval;
+}
+
+/**
+ * @brief set a function call with its arguments
+ *
+ * @param ifccParser::FnCallContext ctx
+ */
+
+antlrcpp::Any CodeGenVisitor::visitFnCall(ifccParser::FnCallContext *ctx)
+{
+	ifccParser::ArgsContext *argsContext = ctx->args();
+	if (argsContext)
+	{
+		visit(argsContext);
+	}
 	string fnName = ctx->VARNAME()->getText();
-	visit(ctx->args());
 	string call;
 #ifdef __APPLE__
 	call = "\tcallq	_" + fnName;
@@ -687,9 +706,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext 
 	call = "\tcallq	_" + fnName;
 #endif
 	cout << call << endl;
-	string regval = getNewTempVariable();
-	cout << MOVL << EAX << ", " << regval << endl;
-	return regval;
+	return 0;
 }
 
 /**

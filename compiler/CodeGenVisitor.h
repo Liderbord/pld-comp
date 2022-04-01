@@ -42,6 +42,7 @@ public:
 	virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionFn(ifccParser::ExpressionFnContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override;
+	virtual antlrcpp::Any visitFnCall(ifccParser::FnCallContext *ctx) override;
 	virtual antlrcpp::Any visitIfElse(ifccParser::IfElseContext *ctx) override;
 	virtual antlrcpp::Any visitWhileDo(ifccParser::WhileDoContext *ctx) override;
 	virtual antlrcpp::Any visitFn(ifccParser::FnContext *ctx) override;
