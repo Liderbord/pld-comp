@@ -4,10 +4,17 @@
 #include "generated/ifccBaseVisitor.h"
 using namespace std;
 
+struct Variable
+{
+	int index;
+	string type;
+	bool used{false};
+};
+
 struct Function
 {
 	string type;
-	map<string, int> vars;
+	map<string, Variable> vars;
 };
 
 class CodeGenVisitor : public ifccBaseVisitor
@@ -44,17 +51,16 @@ public:
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
 	map<std::string, Function> functions;
-	map<string, int> varsError;
-	map<string, int> mapWarnings;
 	int jumps;
 	void setError();
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
 	void setCurrentFunction(string name, string type);
-	map<string, int> getVars();
-	void setVar(string varname, int index);
-	int getVar(string varname);
+	map<string, Variable> getVars();
+	void setVar(string varname, int index, string type);
+	void setVarUsed(string varname);
+	Variable getVar(string varname);
 	bool isVarDeclarated(string varname);
 
 private:

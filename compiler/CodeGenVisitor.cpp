@@ -46,11 +46,12 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 	for (auto varnameContext : ctx->VARNAME())
 	{
 		string varname = varnameContext->getText();
+		string type = ctx->TYPE(counter)->getText();
 		int index = (this->getVars().size() + 1) * 8;
 		// if the name of the argument is not repeated, save it in the map
 		if (!this->isVarDeclarated(varname))
 		{
-			this->setVar(varname, index);
+			this->setVar(varname, index, type);
 			// if there's less than 7 arguments, save the variable in the standard registers
 			if (counter < 6)
 			{
@@ -172,10 +173,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		if (!this->isVarDeclarated(varname))
 		{
 			// save the variable in the stack of the current function
-			this->setVar(varname, index);
-			// intialize the usages of the variable (for throw warning if the var isn't used)
-			mapWarnings[varname] = 0;
-			this->varsError[varname] = index;
+			this->setVar(varname, index, type);
 			// if there's an expression (initial value), visit the expression and set it to the variable
 			// if there's no expression, set the variable to the default value:
 			// if the type is INT, set it to 0
@@ -249,9 +247,9 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 		// get the variable/const by using the expression visitor
 		string value = visit(ctx->expression()).as<string>();
 		// update the usages of the variable, to cancel the 'var no used' warning
-		mapWarnings[varname] = 1;
+		this->setVarUsed(varname);
 		// set the direct assignment
-		string index = to_string(this->getVar(varname));
+		string index = to_string(this->getVar(varname).index);
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << MOVL + value + ", " << EAX << endl;
 		cout << MOVL + EAX + ", -" + index + RBP << endl;
@@ -285,7 +283,7 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 		// if variable is declared, return it
 		if (this->isVarDeclarated(varname))
 		{
-			returnval = "-" + to_string(this->getVar(varname)) + RBP;
+			returnval = "-" + to_string(this->getVar(varname).index) + RBP;
 		}
 		// if variable is not declared, throw an error
 		else
@@ -409,7 +407,7 @@ string CodeGenVisitor::getNewTempVariable()
 	int index = (this->getVars().size() + 1) * 8;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
-	this->setVar(varname, index);
+	this->setVar(varname, index, "int");
 	return "-" + indexString + RBP;
 }
 
@@ -763,7 +761,7 @@ void CodeGenVisitor::setCurrentFunction(string name, string type)
  * @return map<string, int>
  */
 
-map<string, int> CodeGenVisitor::getVars()
+map<string, Variable> CodeGenVisitor::getVars()
 {
 	return this->functions[this->currentFunction].vars;
 }
@@ -772,10 +770,10 @@ map<string, int> CodeGenVisitor::getVars()
  * @brief get the register index of a selected variable of the current function
  *
  * @param varname
- * @return int (register index)
+ * @return Variable (register index)
  */
 
-int CodeGenVisitor::getVar(string varname)
+Variable CodeGenVisitor::getVar(string varname)
 {
 	return this->functions[this->currentFunction].vars[varname];
 }
@@ -785,11 +783,24 @@ int CodeGenVisitor::getVar(string varname)
  *
  * @param varname
  * @param index
+ * @param type
  */
 
-void CodeGenVisitor::setVar(string varname, int index)
+void CodeGenVisitor::setVar(string varname, int index, string type)
 {
-	this->functions[this->currentFunction].vars[varname] = index;
+	this->functions[this->currentFunction].vars[varname].type = type;
+	this->functions[this->currentFunction].vars[varname].index = index;
+}
+
+/**
+ * @brief set that a ver was already used in the current function to avoid warnings
+ *
+ * @param varname
+ */
+
+void CodeGenVisitor::setVarUsed(string varname)
+{
+	this->functions[this->currentFunction].vars[varname].used = true;
 }
 
 /**
