@@ -8,6 +8,13 @@ struct Variable
 {
 	int index;
 	string type;
+	bool used{false};
+};
+
+struct Function
+{
+	string type;
+	map<string, Variable> vars;
 };
 
 class CodeGenVisitor : public ifccBaseVisitor
@@ -16,8 +23,8 @@ public:
 	string getNewTempVariable();
 	string operationExpression(string rightval, string leftval, string operation);
 	string operationCompExpression(string rightval, string leftval, string comp);
-	std::string getRegister(std::string);
-	std::string getMove(std::string);
+	string getRegister(string);
+	string getMove(string);
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
 	virtual antlrcpp::Any visitContent(ifccParser::ContentContext *ctx) override;
 	virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override;
@@ -32,9 +39,12 @@ public:
 	virtual antlrcpp::Any visitExpressionNotEqual(ifccParser::ExpressionNotEqualContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionGreater(ifccParser::ExpressionGreaterContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionLess(ifccParser::ExpressionLessContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionGreaterEqual(ifccParser::ExpressionGreaterEqualContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionLessEqual(ifccParser::ExpressionLessEqualContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionFn(ifccParser::ExpressionFnContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override;
+	virtual antlrcpp::Any visitFnCall(ifccParser::FnCallContext *ctx) override;
 	virtual antlrcpp::Any visitIfElse(ifccParser::IfElseContext *ctx) override;
 	virtual antlrcpp::Any visitWhileDo(ifccParser::WhileDoContext *ctx) override;
 	virtual antlrcpp::Any visitFn(ifccParser::FnContext *ctx) override;
@@ -43,22 +53,20 @@ public:
 	virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override;
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
-	std::map<std::string, std::map<std::string, Variable>> vars;
-	std::map<std::string, int> varsError;
-	std::map<std::string, int> mapWarnings;
+	map<std::string, Function> functions;
 	int jumps;
-	void setError(bool val);
+	void setError();
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
-	void setCurrentFunction(std::string name);
-	std::string getCurrentFunction();
-	std::map<std::string, Variable> getVars();
-	void setVar(std::string varname, int index, string type);
-	Variable getVar(std::string varname);
-	bool isVarNoDeclarated(string varname);
+	void setCurrentFunction(string name, string type);
+	map<string, Variable> getVars();
+	void setVar(string varname, int index, string type);
+	void setVarUsed(string varname);
+	Variable getVar(string varname);
+	bool isVarDeclarated(string varname);
 
 private:
-	bool error;
+	bool error{false};
 	std::string currentFunction;
 };

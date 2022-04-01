@@ -1,5 +1,5 @@
 int main()
 {
-    int b& = 8;
+    int b&a = 8;
     return 2;
 }
