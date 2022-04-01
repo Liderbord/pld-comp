@@ -2,7 +2,7 @@ grammar ifcc;
 
 axiom: prog;
 
-prog: fn+;
+prog: fn+ EOF;
 fn: TYPE VARNAME '(' argsDef? ')' '{' content? '}';
 content: (init | affectation | ifElse | whileDo | returnValue) content?;
 value: CONST | VARNAME;
@@ -41,7 +41,6 @@ WS: [ \t\r\n] -> channel(HIDDEN);
 ARITH: '+' | '-' | '*' | '/' | '%';
 REF: '&';
 TYPE: 'int' | 'float' | 'double';
-VARNAME: [a-zA-Z_]([a-zA-Z0-9_]|'\\u' HEX4 |'\\U' HEX8)*;
+VARNAME: [a-zA-Z_]([a-zA-Z0-9_]| '\\u' HEX4 |'\\U' HEX4 HEX4)*;
 HEX: [0-9a-fA-F];
 HEX4: HEX HEX HEX HEX;
-HEX8: HEX4 HEX4;
