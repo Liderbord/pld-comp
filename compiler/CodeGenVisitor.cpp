@@ -48,7 +48,7 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 		string varname = varnameContext->getText();
 		int index = (this->getVars().size() + 1) * 8;
 		// if the name of the argument is not repeated, save it in the map
-		if (this->isVarNoDeclarated(varname))
+		if (!this->isVarDeclarated(varname))
 		{
 			this->setVar(varname, index);
 			// if there's less than 7 arguments, save the variable in the standard registers
@@ -79,7 +79,8 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
 	string head;
 	string fnName = ctx->VARNAME()->getText();
-	this->setCurrentFunction(fnName);
+	string fnType = ctx->TYPE()->getText();
+	this->setCurrentFunction(fnName, fnType);
 // if the machine is from apple, use an _ before the name of the function
 #ifdef __APPLE__
 	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
@@ -168,7 +169,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		string varname = pair.first;
 		int index = (this->getVars().size() + 1) * 8;
 		// if varname doesn't exists in the stack (vars), save it
-		if (this->isVarNoDeclarated(varname))
+		if (!this->isVarDeclarated(varname))
 		{
 			// save the variable in the stack of the current function
 			this->setVar(varname, index);
@@ -243,7 +244,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	// get the variable name
 	string varname = ctx->VARNAME()->getText();
 	// if the variable is already declarated, assign the new value
-	if (!this->isVarNoDeclarated(varname))
+	if (this->isVarDeclarated(varname))
 	{
 		// get the variable/const by using the expression visitor
 		string value = visit(ctx->expression()).as<string>();
@@ -282,7 +283,7 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	{
 		string varname = varnameNode->getText();
 		// if variable is declared, return it
-		if (!this->isVarNoDeclarated(varname))
+		if (this->isVarDeclarated(varname))
 		{
 			returnval = "-" + to_string(this->getVar(varname)) + RBP;
 		}
@@ -747,9 +748,12 @@ void CodeGenVisitor::setError()
  * @param string name
  */
 
-void CodeGenVisitor::setCurrentFunction(string name)
+void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
-	this->vars[name] = {};
+	Function function;
+	function.type = type;
+	function.vars = {};
+	this->functions[name] = function;
 	this->currentFunction = name;
 }
 
@@ -761,7 +765,7 @@ void CodeGenVisitor::setCurrentFunction(string name)
 
 map<string, int> CodeGenVisitor::getVars()
 {
-	return this->vars[this->currentFunction];
+	return this->functions[this->currentFunction].vars;
 }
 
 /**
@@ -773,7 +777,7 @@ map<string, int> CodeGenVisitor::getVars()
 
 int CodeGenVisitor::getVar(string varname)
 {
-	return this->vars[this->currentFunction][varname];
+	return this->functions[this->currentFunction].vars[varname];
 }
 
 /**
@@ -785,7 +789,7 @@ int CodeGenVisitor::getVar(string varname)
 
 void CodeGenVisitor::setVar(string varname, int index)
 {
-	this->vars[this->currentFunction][varname] = index;
+	this->functions[this->currentFunction].vars[varname] = index;
 }
 
 /**
@@ -796,7 +800,7 @@ void CodeGenVisitor::setVar(string varname, int index)
  * @return false
  */
 
-bool CodeGenVisitor::isVarNoDeclarated(string varname)
+bool CodeGenVisitor::isVarDeclarated(string varname)
 {
-	return this->vars[this->currentFunction].find(varname) == this->vars[this->currentFunction].end();
+	return this->functions[this->currentFunction].vars.find(varname) != this->functions[this->currentFunction].vars.end();
 }
