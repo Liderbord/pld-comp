@@ -194,15 +194,15 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	string varname = ctx->VARNAME()->getText();
 	// getting the variable/const by using the expressionValue visitor
 	string value = visit(ctx->expression()).as<string>();
-	string index;
+	Variable var;
 	// check if the variable was already declared
 	if (this->isVarNoDeclarated(varname)){
 		mapWarnings[varname] = 1;
-		index = to_string(this->getVar(varname).index);
+		var = this->getVar(varname);
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
-		cout << "\tmovl " + value + ", " << EAX << endl;
-		cout << "\tmovl " + EAX + ", -" + index + "(%rbp)" << endl;
+		cout << "\t" + this->getMove(var.type) + " " + value + ", " << EAX << endl;
+		cout << "\t" + this->getMove(var.type) + " " + EAX + ", -" + to_string(var.index) + "(%rbp)" << endl;
 	} else if (varsError.find(varname) == varsError.end()) {
 		// set an error
 		error = true;
