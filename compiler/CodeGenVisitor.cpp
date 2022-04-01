@@ -226,7 +226,8 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
 		cout << "\tmovq $8 , %rax" << endl;
-		cout << "\timulq " + value + ", %rax"<< endl;
+		cout << "\tmovl " + value + " ,%ebx" << endl;
+		cout << "\timulq %rbx, %rax"<< endl;
 		cout << "\taddq $-" + index + ", %rax" << endl;
 		cout << "\tmovq %rax, " + temp << endl;
 		cout << "\tmovq %rbp, %rax" << endl;
@@ -254,10 +255,19 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
+	ifccParser::ExpressionContext *expressionContext = ctx->expression();
 	if (varnameNode) {
 		string varname = varnameNode->getText();
 		string index = to_string(this->vars[varname]);
-		returnval = "-" + index + "(%rbp)";
+		if (expressionContext){
+			string exprString= visit(expressionContext);
+			string mult = this->operationExpression(exprString, "$8", "imull");
+			returnval = this->operationExpression("$-"+index, mult, "add ");
+		} else {
+			
+			returnval = "-" + index + "(%rbp)";
+		}
+		
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
 	}

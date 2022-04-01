@@ -5,7 +5,7 @@ axiom: prog;
 prog: fn+;
 fn: TYPE VARNAME '(' argsDef? ')' '{' content '}';
 content: (init | affectation | ifElse | whileDo | arrayDec | returnValue) content?;
-value: CONST | VARNAME;
+value: CONST | VARNAME | VARNAME '[' expression ']';
 returnValue: 'return' value ';';
 
 init: TYPE declaration; 
