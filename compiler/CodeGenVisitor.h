@@ -23,6 +23,8 @@ public:
 	string getNewTempVariable();
 	string operationExpression(string rightval, string leftval, string operation);
 	string operationCompExpression(string rightval, string leftval, string comp);
+	string getRegister(string);
+	string getMove(string);
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
 	virtual antlrcpp::Any visitContent(ifccParser::ContentContext *ctx) override;
 	virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override;

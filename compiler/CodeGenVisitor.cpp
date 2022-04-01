@@ -11,6 +11,7 @@ static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the 
 static const string MOVL = "\tmovl ";
 
 // registers
+static const string AL = "%al";
 static const string EAX = "%eax";
 static const string ECX = "%ecx";
 static const string EDX = "%edx";
@@ -179,8 +180,11 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 			// if the type is INT, set it to 0
 			// TODO: if the type is CHAR, set it to ?
 			string value = pair.second ? visit(pair.second).as<string>() : "$0";
+			cout << "\t# declare " << type << " and assign " << value << endl;
 			cout << MOVL + value + ", " << EAX << endl;
 			cout << MOVL + EAX + ", -" + to_string(index) + RBP << endl;
+			cout << "\t" + getMove(type) + " " + value + ", " << getRegister(type) << endl;
+			cout << "\t" + getMove(type) + " " + getRegister(type) + ", -" + to_string(index) + "(%rbp)" << endl;
 		}
 		else
 		{
@@ -249,10 +253,10 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 		// update the usages of the variable, to cancel the 'var no used' warning
 		this->setVarUsed(varname);
 		// set the direct assignment
-		string index = to_string(this->getVar(varname).index);
+		Variable var = this->getVar(varname);
 		cout << "\t# assigning " << value << " to " << varname << endl;
-		cout << MOVL + value + ", " << EAX << endl;
-		cout << MOVL + EAX + ", -" + index + RBP << endl;
+		cout << "\t" + this->getMove(var.type) + " " + value + ", " << EAX << endl;
+		cout << "\t" + this->getMove(var.type) + " " + EAX + ", -" + to_string(var.index) + "(%rbp)" << endl;
 	}
 	else
 	{
@@ -276,29 +280,35 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
 	// if the value is a varname, get the register index from
 	// the stack of the current function
-	// and assign it to returnval in the assembly format
+	// and return it in the assembly format
 	if (varnameNode)
 	{
 		string varname = varnameNode->getText();
 		// if variable is declared, return it
 		if (this->isVarDeclarated(varname))
 		{
-			returnval = "-" + to_string(this->getVar(varname).index) + RBP;
+			return "-" + to_string(this->getVar(varname).index) + RBP;
 		}
 		// if variable is not declared, throw an error
 		else
 		{
 			cout << "# ERROR: variable " << varname << " not declared" << endl;
 			this->setError();
+			return 1;
 		}
 	}
-	// if the value is a number, convert the number as string
-	// and assign it to returnval in the assembly format
-	else
+	antlr4::tree::TerminalNode *charNodes = ctx->CHAR();
+	// if the value is a char, convert the ascii value
+	// and return it in the assembly format
+	if (charNodes)
 	{
-		returnval = "$" + ctx->CONST()->getText();
+		string character = charNodes->getText();
+		return "$" + to_string(int(character[1]));
 	}
-	return returnval;
+	// if the value is a number, convert the number as string
+	// and return it in the assembly format
+	string constant = ctx->CONST()->getText();
+	return "$" + constant;
 }
 
 /**
@@ -734,6 +744,26 @@ antlrcpp::Any CodeGenVisitor::visitExpressionValue(ifccParser::ExpressionValueCo
 }
 
 /************************* HELPERS ****************************/
+
+// TODO: add def
+
+string CodeGenVisitor::getRegister(string type)
+{
+	if (type == "char")
+	{
+		return AL;
+	}
+	return EAX;
+}
+
+string CodeGenVisitor::getMove(string type)
+{
+	if (type == "char")
+	{
+		return "movb";
+	}
+	return "movl";
+}
 
 /**
  * @brief get a bool indicating if there's an error in the program
