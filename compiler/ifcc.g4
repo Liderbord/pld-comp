@@ -12,11 +12,11 @@ declaration: dec (',' dec)* ';' ;
 dec: VARNAME ('=' expression)? ;
 affectation: VARNAME '=' expression # affectationExpr;
 expression:
-	expression MULTDIV expression # expressionMultDiv
-	| expression ADDSUB expression # expressionAddSub
-	| expression ('&=' | '&&') expression # expressionAnd
-	| expression ('|=' | '||') expression # expressionOr
-	| expression '^=' expression # expressionXor
+	expression MULTDIV expression			# expressionMultDiv
+	| expression ADDSUB expression			# expressionAddSub
+	| expression ('&' | '&&') expression	# expressionAnd
+	| expression ('|' | '||') expression	# expressionOr
+	| expression '^' expression				# expressionXor
 	| expression '==' expression # expressionEqual
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
