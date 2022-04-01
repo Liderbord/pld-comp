@@ -11,6 +11,7 @@ static const string EAX = "%eax";
 static const string ECX = "%ecx";
 static const string EDX = "%edx";
 static const string ARG_REGS[6] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
+static const string AL = "%al";
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx) 
 {
@@ -20,6 +21,24 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 	return 0;
 }
 
+string CodeGenVisitor::getRegister(string type)
+{
+	if (type == "char")
+	{
+		return AL;
+	}
+	return EAX;
+}
+
+string CodeGenVisitor::getMove(string type)
+{
+	if (type == "char")
+	{
+		return "movb";
+	}
+	return "movl";
+}
+
 antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx) 
 {
 	int counter = 0;
@@ -27,7 +46,7 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 		string varname = varnameContext->getText();
 		int index = (this->getVars().size() + 1) * 8;
 		if (this->isVarNoDeclarated(varname)) {
-			this->setVar(varname, index);
+			this->setVar(varname, index, "int");
 			if (counter < 6) {
 				cout << "\tmovl " << ARG_REGS[counter] << ", -" + to_string(index) + "(%rbp)" << endl;
 			}
@@ -108,15 +127,24 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		int index = (this->getVars().size() + 1) * 8;
 		// if varname already exists in vars, then it's an error
 		if (this->isVarNoDeclarated(varname)) {
-			this->setVar(varname, index);
+			this->setVar(varname, index, type);
+
+			// Add assmebly comments for legibility
+			cout << "\t# declare " << type << " " << varname;
 			mapWarnings[varname] = 0;
 			this->varsError[varname] = index;
 			// look for the value and cout ASSEMBLY code
 			if (paire.second != "")
 			{
 				string value = paire.second;
-				cout << "\tmovl " + value + ", " << EAX << endl;
-				cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
+				cout << " and assign " + value << endl;
+				cout << "\t" + getMove(type) + " " + value + ", " << getRegister(type) << endl;
+				cout << "\t" + getMove(type) + " " + getRegister(type) + ", -" + to_string(index) + "(%rbp)" << endl;
+				// look for the value and cout ASSEMBLY code
+			}
+			else
+			{
+				cout << endl;
 			}
 		} else {
 			// TODO : print the error
@@ -124,7 +152,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 		}
 	}
 
-return 0;
+	return 0;
 }
 
 antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *ctx)
@@ -170,7 +198,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	// check if the variable was already declared
 	if (this->isVarNoDeclarated(varname)){
 		mapWarnings[varname] = 1;
-		index = to_string(this->getVar(varname));
+		index = to_string(this->getVar(varname).index);
 		// apply the direct assignment
 		cout << "\t# assigning " << value << " to " << varname << endl;
 		cout << "\tmovl " + value + ", " << EAX << endl;
@@ -184,23 +212,30 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
 {
+	// cout << "made it here" << endl;
 	string returnval;
-	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
-	if (varnameNode) {
+	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
+	if (varnameNode)
+	{
 		string varname = varnameNode->getText();
-		string index = to_string(this->getVar(varname));
+		string index = to_string(this->getVar(varname).index);
 		returnval = "-" + index + "(%rbp)";
-	} else {
-		returnval = "$" + ctx->CONST()->getText();
+		return returnval;
 	}
-	return returnval;
+	string character = ctx->CHAR()->getText();
+	// evaluate if the constant is a char
+	// if its a char convert it to its ascii value
+	return "$" + to_string(int(character[1]));
+	// get the constant
+	string constant = ctx->CONST()->getText();
+	return "$" + constant;
 }
 
 string CodeGenVisitor::getNewTempVariable() {
 	int index = (this->getVars().size() + 1) * 8;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
-	this->setVar(varname, index);
+	this->setVar(varname, index, "int");
 	return "-" + indexString + "(%rbp)";
 }
 
@@ -385,16 +420,19 @@ string CodeGenVisitor::getCurrentFunction(){
 	return this->currentFunction;
 }
 
-map<string, int> CodeGenVisitor::getVars(){
+map<string, Variable> CodeGenVisitor::getVars()
+{
 	return this->vars[this->currentFunction];
 }
 
-int CodeGenVisitor::getVar(string varname){
+Variable CodeGenVisitor::getVar(string varname)
+{
 	return this->vars[this->currentFunction][varname];
 }
 
-void CodeGenVisitor::setVar(string varname, int index){
-	this->vars[this->currentFunction][varname] = index;
+void CodeGenVisitor::setVar(string varname, int index, string type)
+{
+	this->vars[this->currentFunction][varname] = Variable{index, type};
 }
 
 bool CodeGenVisitor::isVarNoDeclarated(string varname) {
