@@ -20,6 +20,8 @@ import os
 import shutil
 import sys
 import subprocess
+from multiprocessing import Pool, TimeoutError
+
 
 
 class text_color:
@@ -177,9 +179,8 @@ if args.debug:
 ######################################################################################
 # TEST step: actually compile all test-cases with both compilers
 
-for jobname in jobs:
+def run_test(jobname):
     os.chdir(orig_cwd)
-
     os.chdir(jobname)
 
     # Reference compiler = GCC
@@ -198,17 +199,17 @@ for jobname in jobs:
     if gccstatus != 0 and ifccstatus != 0:
         # ifcc correctly rejects invalid program -> test-case ok
         print(f"{text_color.OKGREEN}OK - {jobname}{text_color.ENDC}")
-        continue
+        return
     elif gccstatus != 0 and ifccstatus == 0:
         # ifcc wrongly accepts invalid program -> error
         print(f"{text_color.FAIL}FAIL - {jobname}{text_color.ENDC}\n(your compiler accepts an invalid program)")
-        continue
+        return
     elif gccstatus == 0 and ifccstatus != 0:
         # ifcc wrongly rejects valid program -> error
         print(f"{text_color.FAIL}FAIL - {jobname}{text_color.ENDC}\n(your compiler rejects a valid program)")
         if args.verbose:
             dumpfile("ifcc-compile.txt")
-        continue
+        return
     else:
         # ifcc accepts to compile valid program -> let's link it
         ldstatus = command("gcc -o exe-ifcc asm-ifcc.s", "ifcc-link.txt")
@@ -217,7 +218,7 @@ for jobname in jobs:
                 f"{text_color.FAIL}FAIL - {jobname} {text_color.ENDC}\n(your compiler produces incorrect assembly)")
             if args.verbose:
                 dumpfile("ifcc-link.txt")
-            continue
+            return
 
     # both compilers  did produce an  executable, so now we  run both
     # these executables and compare the results.
@@ -231,7 +232,13 @@ for jobname in jobs:
             dumpfile("gcc-execute.txt")
             print("you:")
             dumpfile("ifcc-execute.txt")
-        continue
+        return
 
     # last but not least
-    print(f"{text_color.OKGREEN} OK - {jobname}{text_color.ENDC}")
+    print(f"{text_color.OKGREEN}OK - {jobname}{text_color.ENDC}")
+
+with Pool(processes=6) as pool:
+    # Run tests in pools
+    multiple_results = [pool.apply_async(run_test, (jobname,)) for jobname in jobs]
+    # print test output
+    [res.get(timeout=1) for res in multiple_results]
