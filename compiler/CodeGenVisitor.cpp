@@ -10,7 +10,7 @@ static const string STACK = "\tendbr64\n \tpushq\t%rbp  # save %rbp on the stack
 static const string END = "\t# epilogue\n\tpopq\t %rbp  # restore %rbp from the stack\n\tret  # return to the caller (here the shell)\n";
 static const string MOVL = "\tmovl ";
 
-// registers
+// registers (assembly)
 static const string AL = "%al";
 static const string EAX = "%eax";
 static const string ECX = "%ecx";
