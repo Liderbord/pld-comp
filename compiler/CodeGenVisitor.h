@@ -78,6 +78,7 @@ public:
 	void setWarning(bool val);
 	bool getWarning();
 	void setCurrentFunction(string name, string type);
+	string getCurrentFunctionType();
 	map<string, Variable> getVars();
 	void setVar(string varname, int index, string type);
 	void setVarUsed(string varname);

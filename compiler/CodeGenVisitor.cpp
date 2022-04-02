@@ -157,11 +157,21 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 {
 	// get the value (var/const) from expression
 	Element element = visit(ctx->expression());
-	// save the value in the register EAX
-	cout << "\t# return " << element << endl;
-	// set EAX as the return value
-	cout << "\t"
-			 << "movl " << element << ", %eax" << endl;
+	// if the element has the same type as the function's return type, return it
+	if (element.type == this->getCurrentFunctionType())
+	{
+		// save the value in the register EAX
+		// set EAX as the return value
+		cout << "\t# return " << element << endl;
+		cout << "\t"
+				 << "movl " << element << ", %eax" << endl;
+	}
+	// if the element is not the same type as the function's return type, set an error
+	else
+	{
+		cout << "# ERROR: return type mismatch" << endl;
+		this->setError();
+	}
 	return 0;
 }
 
@@ -810,6 +820,17 @@ void CodeGenVisitor::setCurrentFunction(string name, string type)
 	function.vars = {};
 	this->functions[name] = function;
 	this->currentFunction = name;
+}
+
+/**
+ * @brief get the current function type
+ *
+ * @return string
+ */
+
+string CodeGenVisitor::getCurrentFunctionType()
+{
+	return this->functions[this->currentFunction].type;
 }
 
 /**
