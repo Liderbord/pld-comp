@@ -43,12 +43,15 @@ int main(int argn, const char **argv)
     exit(1);
   }
 
+  // visit the grammar tree and generate the assembly code
   CodeGenVisitor v;
   v.visit(tree);
 
+  // check if there is a warning (unused variable)
   map<string, Variable>::iterator var;
   map<string, Function>::iterator fn;
-  for (fn = v.functions.begin(); fn != v.functions.end(); fn++)
+  map<string, Function> functions = v.getFunctions();
+  for (fn = functions.begin(); fn != functions.end(); fn++)
   {
     for (var = fn->second.vars.begin(); var != fn->second.vars.end(); var++)
     {
@@ -59,5 +62,6 @@ int main(int argn, const char **argv)
     }
   }
 
+  // return 0 if there is no error, 1 otherwise
   return v.getError() ? 1 : 0;
 }
