@@ -48,7 +48,7 @@ public:
 	virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override;
 	virtual antlrcpp::Any visitValue(ifccParser::ValueContext *ctx) override;
 	virtual antlrcpp::Any visitReturnValue(ifccParser::ReturnValueContext *ctx) override;
-	virtual antlrcpp::Any visitExpressionMultDiv(ifccParser::ExpressionMultDivContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionMultDivMod(ifccParser::ExpressionMultDivModContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionAddSub(ifccParser::ExpressionAddSubContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionAnd(ifccParser::ExpressionAndContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionOr(ifccParser::ExpressionOrContext *ctx) override;

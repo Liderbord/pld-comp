@@ -12,7 +12,7 @@ declaration: dec (',' dec)* ';' ;
 dec: VARNAME ('=' expression)? ;
 affectation: VARNAME '=' expression # affectationExpr;
 expression:
-	expression MULTDIV expression # expressionMultDiv
+	expression MULTDIVMOD expression # expressionMultDivMod
 	| expression ADDSUB expression # expressionAddSub
 	| expression ('&=' | '&&') expression # expressionAnd
 	| expression ('|=' | '||') expression # expressionOr
@@ -38,9 +38,8 @@ DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 CONST: [0-9]+;
 ADDSUB: '+' | '-';
-MULTDIV: '*' | '/';
+MULTDIVMOD: '*' | '/' | '%';
 CHAR: '\'' .? '\'';
-ARITH: '+' | '-' | '*' | '/' | '%';
 REF: '&';
 TYPE: 'int' | 'char' | 'float' | 'double' | 'void';
 VARNAME: [a-zA-Z_]([a-zA-Z0-9_]| '\\u' HEX4 |'\\U' HEX4 HEX4)*;

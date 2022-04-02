@@ -158,7 +158,9 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 	// get the value (var/const) from expression
 	Element element = visit(ctx->expression());
 	// if the element has the same type as the function's return type, return it
-	if (element.type == this->getCurrentFunctionType())
+	if (element.type == this->getCurrentFunctionType() ||
+			(element.type == "int" && this->getCurrentFunctionType() == "char") ||
+			(element.type == "char" && this->getCurrentFunctionType() == "int"))
 	{
 		// save the value in the register EAX
 		// set EAX as the return value
@@ -466,14 +468,31 @@ Element CodeGenVisitor::operationExpression(Element leftval, Element rightval, s
 		{
 			result = leftval.value / rightval.value;
 		}
+		else if (operation == "mod")
+		{
+			result = leftval.value % rightval.value;
+		}
 		else if (operation == "add")
 		{
 			result = leftval.value + rightval.value;
 		}
-		else
+		else if (operation == "sub")
 		{
 			result = leftval.value - rightval.value;
 		}
+		else if (operation == "and")
+		{
+			result = leftval.value && rightval.value;
+		}
+		else if (operation == "or")
+		{
+			result = leftval.value || rightval.value;
+		}
+		else
+		{
+			result = leftval.value ^ rightval.value;
+		}
+		cout << "\t# result: " << result << endl;
 		return Element(result, "int", false);
 	}
 	// if one element is a variable, execute the operation on assembly
@@ -486,6 +505,20 @@ Element CodeGenVisitor::operationExpression(Element leftval, Element rightval, s
 			cout << "\tcltd" << endl;
 			cout << "\tmovl " << rightval << ", " << ECX << endl;
 			cout << "\tidivl " << ECX << endl;
+		}
+		else if (operation == "mod")
+		{
+			cout << "\tcltd" << endl;
+			if (rightval.var)
+			{
+				cout << "\tidivl " << rightval << endl;
+			}
+			else
+			{
+				cout << "\tmovl " << rightval << ", " << ECX << endl;
+				cout << "\tidivl " << ECX << endl;
+			}
+			cout << "\tmovl " << EDX << ", " << EAX << endl;
 		}
 		else
 		{
@@ -504,20 +537,25 @@ Element CodeGenVisitor::operationExpression(Element leftval, Element rightval, s
  * @return antlrcpp::Any
  */
 
-antlrcpp::Any CodeGenVisitor::visitExpressionMultDiv(ifccParser::ExpressionMultDivContext *ctx)
+antlrcpp::Any CodeGenVisitor::visitExpressionMultDivMod(ifccParser::ExpressionMultDivModContext *ctx)
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	string operation = ctx->MULTDIV()->getText();
+	string operation = ctx->MULTDIVMOD()->getText();
 	if (operation == "*")
 	{
 		cout << "\t# do " << leftval << " * " << rightval << endl;
 		return operationExpression(leftval, rightval, "imull");
 	}
-	else
+	else if (operation == "/")
 	{
 		cout << "\t# do " << leftval << " / " << rightval << endl;
 		return operationExpression(leftval, rightval, "idiv");
+	}
+	else
+	{
+		cout << "\t# do " << leftval << " % " << rightval << endl;
+		return operationExpression(leftval, rightval, "mod");
 	}
 }
 
@@ -605,14 +643,49 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 
 Element CodeGenVisitor::operationCompExpression(Element leftval, Element rightval, string comp)
 {
-	Element temporalVariable = getNewTempVariable();
-	cout << MOVL << leftval << ", " << EAX << endl;
-	cout << "\tcmpl " << rightval << ", " << EAX << endl;
-	cout << "\tset" << comp << " %al" << endl;
-	cout << "\tandb	$1, %al" << endl;
-	cout << "\tmovzbl	%al, %eax" << endl;
-	cout << "\tmovl	%eax, " << temporalVariable << endl;
-	return temporalVariable;
+	// if leftval and rightval are constants, execute the comparation on compiler
+	if (!leftval.var && !rightval.var)
+	{
+		int result;
+		if (comp == "e")
+		{
+			result = leftval.value == rightval.value;
+		}
+		else if (comp == "ne")
+		{
+			result = leftval.value != rightval.value;
+		}
+		else if (comp == "g")
+		{
+			result = leftval.value > rightval.value;
+		}
+		else if (comp == "l")
+		{
+			result = leftval.value < rightval.value;
+		}
+		else if (comp == "ge")
+		{
+			result = leftval.value >= rightval.value;
+		}
+		else
+		{
+			result = leftval.value <= rightval.value;
+		}
+		cout << "\t# result: " << result << endl;
+		return Element(result, "int", false);
+	}
+	// if one element is a variable, execute the comparation on assembly
+	else
+	{
+		Element temporalVariable = getNewTempVariable();
+		cout << MOVL << leftval << ", " << EAX << endl;
+		cout << "\tcmpl " << rightval << ", " << EAX << endl;
+		cout << "\tset" << comp << " %al" << endl;
+		cout << "\tandb	$1, %al" << endl;
+		cout << "\tmovzbl	%al, %eax" << endl;
+		cout << "\tmovl	%eax, " << temporalVariable << endl;
+		return temporalVariable;
+	}
 }
 
 /**
@@ -626,6 +699,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionEqual(ifccParser::ExpressionEqualCo
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " == " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "e");
 }
 
@@ -640,6 +714,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionNotEqual(ifccParser::ExpressionNotE
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " != " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "ne");
 }
 
@@ -654,6 +729,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreat
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " > " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "g");
 }
 
@@ -668,6 +744,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessCont
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " < " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "l");
 }
 
@@ -682,6 +759,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionGreaterEqual(ifccParser::Expression
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " >= " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "ge");
 }
 
@@ -696,6 +774,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLessEqual(ifccParser::ExpressionLes
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
+	cout << "\t# do " << leftval << " <= " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "le");
 }
 
