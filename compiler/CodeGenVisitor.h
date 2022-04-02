@@ -4,6 +4,24 @@
 #include "generated/ifccBaseVisitor.h"
 using namespace std;
 
+struct Element
+{
+	bool var{false};
+	string type;
+	int value;
+	Element(int value, string type, bool var) : value(value), type(type), var(var) {}
+	string getValue()
+	{
+		return var ? "-" + to_string(value) + "(%rbp)" : "$" + to_string(value);
+	}
+};
+
+ostream &
+operator<<(ostream &os, Element &element)
+{
+	return os << element.getValue();
+};
+
 struct Variable
 {
 	int index;
@@ -20,9 +38,9 @@ struct Function
 class CodeGenVisitor : public ifccBaseVisitor
 {
 public:
-	string getNewTempVariable();
-	string operationExpression(string rightval, string leftval, string operation);
-	string operationCompExpression(string rightval, string leftval, string comp);
+	Element getNewTempVariable();
+	Element operationExpression(Element rightval, Element leftval, string operation);
+	Element operationCompExpression(Element rightval, Element leftval, string comp);
 	string getRegister(string);
 	string getMove(string);
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
