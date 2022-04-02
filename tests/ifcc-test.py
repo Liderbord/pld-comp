@@ -66,7 +66,9 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument('input', metavar='PATH', nargs='+', help='For each path given:'
                        + ' if it\'s a file, use this file;'
                        + ' if it\'s a directory, use all *.c files in this subtree')
-
+argparser.add_argument('-m', '--multithread',action="count", default=0,
+                        help='Enable multithreading, faster execution but may not'
+                        + ' always work')
 argparser.add_argument('-d', '--debug', action="count", default=0,
                        help='Increase quantity of debugging messages (only useful to debug the test script itself)')
 argparser.add_argument('-v', '--verbose', action="count", default=0,
@@ -237,8 +239,12 @@ def run_test(jobname):
     # last but not least
     print(f"{text_color.OKGREEN}OK - {jobname}{text_color.ENDC}")
 
-with Pool(processes=6) as pool:
-    # Run tests in pools
-    multiple_results = [pool.apply_async(run_test, (jobname,)) for jobname in jobs]
-    # print test output
-    [res.get(timeout=1) for res in multiple_results]
+if args.multithread > 0:
+    with Pool(processes=6) as pool:
+        # Run tests in pools
+        multiple_results = [pool.apply_async(run_test, (jobname,)) for jobname in jobs]
+        # print test output
+        [res.get(timeout=1) for res in multiple_results]
+else:
+    for jobname in jobs:
+        run_test(jobname)
