@@ -454,11 +454,46 @@ Element CodeGenVisitor::getNewTempVariable()
 
 Element CodeGenVisitor::operationExpression(Element leftval, Element rightval, string operation)
 {
-	Element temporalVariable = getNewTempVariable();
-	cout << MOVL << leftval << ", " << EAX << endl;
-	cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
-	cout << MOVL << EAX << ", " << temporalVariable << endl;
-	return temporalVariable;
+	// if leftval and rightval are constants, execute the operation on compiler
+	if (!leftval.var && !rightval.var)
+	{
+		int result;
+		if (operation == "imull")
+		{
+			result = leftval.value * rightval.value;
+		}
+		else if (operation == "idiv")
+		{
+			result = leftval.value / rightval.value;
+		}
+		else if (operation == "add")
+		{
+			result = leftval.value + rightval.value;
+		}
+		else
+		{
+			result = leftval.value - rightval.value;
+		}
+		return Element(result, "int", false);
+	}
+	// if one element is a variable, execute the operation on assembly
+	else
+	{
+		Element temporalVariable = getNewTempVariable();
+		cout << MOVL << leftval << ", " << EAX << endl;
+		if (operation == "idiv")
+		{
+			cout << "\tcltd" << endl;
+			cout << "\tmovl " << rightval << ", " << ECX << endl;
+			cout << "\tidivl " << ECX << endl;
+		}
+		else
+		{
+			cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
+		}
+		cout << MOVL << EAX << ", " << temporalVariable << endl;
+		return temporalVariable;
+	}
 }
 
 /**
@@ -482,13 +517,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionMultDiv(ifccParser::ExpressionMultD
 	else
 	{
 		cout << "\t# do " << leftval << " / " << rightval << endl;
-		Element temporalVariable = getNewTempVariable();
-		cout << MOVL << leftval << ", " << EAX << endl;
-		cout << "\tcltd" << endl;
-		cout << "\tmovl\t" << rightval << ", " << ECX << endl;
-		cout << "\tidivl\t" << ECX << endl;
-		cout << "\tmovl\t" << EAX << ", " << temporalVariable << endl;
-		return temporalVariable;
+		return operationExpression(leftval, rightval, "idiv");
 	}
 }
 
@@ -508,12 +537,12 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAddSub(ifccParser::ExpressionAddSub
 	if (operation == "+")
 	{
 		cout << "\t# do " << leftval << " + " << rightval << endl;
-		return operationExpression(leftval, rightval, "add ");
+		return operationExpression(leftval, rightval, "add");
 	}
 	else
 	{
 		cout << "\t# do " << leftval << " - " << rightval << endl;
-		return operationExpression(leftval, rightval, "sub ");
+		return operationExpression(leftval, rightval, "sub");
 	}
 }
 
