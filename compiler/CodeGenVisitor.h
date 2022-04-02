@@ -4,45 +4,54 @@
 #include "generated/ifccBaseVisitor.h"
 using namespace std;
 
+/**
+ * @brief Element is used to store the information about the variables and constants (int/char).
+ * 			  It's goal is to pass information between the different expressions, so they can optimize
+ * 				the compilation by executing operations between constants and checking the types of the
+ * 				variables used to avoid wrong results.
+ *
+ */
+
 struct Element
 {
-	bool var{false};
-	string type;
-	int value;
+	bool var{false}; // if the variable is a variable or not
+	string type;		 // int/char
+	int value;			 // register index (RBP) if it's a variable or a constant value ($N) if it's a constant
 	Element(int value, string type, bool var) : value(value), type(type), var(var) {}
-	string getValue()
-	{
-		return var ? "-" + to_string(value) + "(%rbp)" : "$" + to_string(value);
-	}
+	string getValue(); // returns the value of the element on assembly code
 };
 
-ostream &
-operator<<(ostream &os, Element &element)
-{
-	return os << element.getValue();
-};
+/**
+ * @brief Variable is used to store the information of a variable (int/char).
+ * 				It stores the register index (RBP), the type (int/char) and if the variable was used or not.
+ *
+ */
 
 struct Variable
 {
-	int index;
-	string type;
-	bool used{false};
+	int index;				// register index (RBP)
+	string type;			// int/char
+	bool used{false}; // if the variable was used or not
 };
+
+/**
+ * @brief Function is used to store the information of a function (int/char/void).
+ * 				It stores the type (int/char/void) and the variables used in the function (stack)
+ * 				using a mapping between the name of the variable and it's information (Variable).
+ *
+ */
 
 struct Function
 {
-	string type;
-	map<string, Variable> vars;
+	string type;								// int/char/void
+	map<string, Variable> vars; // stack (variable name -> variable information)
 };
 
 class CodeGenVisitor : public ifccBaseVisitor
 {
 public:
-	Element getNewTempVariable();
-	Element operationExpression(Element rightval, Element leftval, string operation);
-	Element operationCompExpression(Element rightval, Element leftval, string comp);
-	string getRegister(string);
-	string getMove(string);
+	// Functions descriptions on implementation
+	// Grammar visitors
 	virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
 	virtual antlrcpp::Any visitContent(ifccParser::ContentContext *ctx) override;
 	virtual antlrcpp::Any visitInit(ifccParser::InitContext *ctx) override;
@@ -71,21 +80,30 @@ public:
 	virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override;
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
-	map<std::string, Function> functions;
-	int jumps;
+	// Helpers
+	Element getNewTempVariable();
+	Element operationExpression(Element rightval, Element leftval, string operation);
+	Element operationCompExpression(Element rightval, Element leftval, string comp);
+	string getRegister(string);
+	string getMove(string);
+	void setCurrentFunction(string name, string type);
+	string getCurrentFunctionType();
+	map<string, Function> getFunctions();
+	map<string, Variable> getVars();
+	void setVar(string varname, int index, string type);
+	Variable getVar(string varname);
+	void setVarUsed(string varname);
+	bool isVarDeclarated(string varname);
+	string getJumpLabel();
+	// Errors and warning
 	void setError();
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
-	void setCurrentFunction(string name, string type);
-	string getCurrentFunctionType();
-	map<string, Variable> getVars();
-	void setVar(string varname, int index, string type);
-	void setVarUsed(string varname);
-	Variable getVar(string varname);
-	bool isVarDeclarated(string varname);
 
 private:
-	bool error{false};
-	std::string currentFunction;
+	int jumps;											 // counter of jumps on assembly code (used to generate unique labels)
+	bool error{false};							 // if there was an error during the compilation, used to return 1 or 0 (compilation)
+	string currentFunction;					 // name of the current function, used to access the current stack (next field)
+	map<string, Function> functions; // mapping of functions names and their information (type, variables (stack))
 };

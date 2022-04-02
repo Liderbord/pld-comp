@@ -19,6 +19,25 @@ static const string RBP = "(%rbp)";
 static const string ARG_REGS[6] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"}; // standard argument registers
 
 /**
+ * @brief get the value (register or constant int/char) of an element in assembly code
+ *
+ * @return string
+ */
+
+string Element::getValue()
+{
+	return this->var ? "-" + to_string(this->value) + RBP : "$" + to_string(this->value);
+}
+
+// implementation of the << operator, to allow printing of register or const value of
+// the Element struct without having to call getValue implicitly.
+ostream &
+operator<<(ostream &os, Element &element)
+{
+	return os << element.getValue();
+};
+
+/**
  * @brief visit all the functions declarated, starting with the first one
  *
  * @param ifccParser::ProgContext ctx
@@ -348,8 +367,7 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 	// get the pointer to the possible else content
 	ifccParser::ContentContext *elseContentContext = ctx->content(1);
 	// get a new jump label to finish the if
-	this->jumps++;
-	string jumpEndIf = "LBB0_" + to_string(this->jumps);
+	string jumpEndIf = this->getJumpLabel();
 	// set the condition in assembly code
 	cout << MOVL << expval << ", " << EAX << endl;
 	cout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
@@ -357,8 +375,7 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 	if (elseContentContext)
 	{
 		// get a new jump label to omit the if content and pass directly to else
-		this->jumps++;
-		string jumpElse = "LBB0_" + to_string(this->jumps);
+		string jumpElse = this->getJumpLabel();
 		// set the jump condition in assembly code (if condition is 0, jump to else)
 		cout << "\tje " << jumpElse << endl;
 		// set the if's content
@@ -405,11 +422,9 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 {
 	// get a new jump label to come back to the while condition
-	this->jumps++;
-	string jumpCondition = "LBB0_" + to_string(this->jumps);
+	string jumpCondition = this->getJumpLabel();
 	// get a new jump label to finish the while
-	this->jumps++;
-	string jumpEnd = "LBB0_" + to_string(this->jumps);
+	string jumpEnd = this->getJumpLabel();
 	// set the jump label of the condition
 	cout << jumpCondition << ":" << endl;
 	// get the condition (var/const) of the while
@@ -942,6 +957,17 @@ string CodeGenVisitor::getCurrentFunctionType()
 }
 
 /**
+ * @brief get all the functions and their stack
+ *
+ * @return map<string, Function>
+ */
+
+map<string, Function> CodeGenVisitor::getFunctions()
+{
+	return this->functions;
+}
+
+/**
  * @brief get the stack (vars) from the current function
  *
  * @return map<string, int>
@@ -1000,4 +1026,16 @@ void CodeGenVisitor::setVarUsed(string varname)
 bool CodeGenVisitor::isVarDeclarated(string varname)
 {
 	return this->functions[this->currentFunction].vars.find(varname) != this->functions[this->currentFunction].vars.end();
+}
+
+/**
+ * @brief get a new jump label on assembly code, to jump from one part of the code to another
+ *
+ * @return string
+ */
+
+string CodeGenVisitor::getJumpLabel()
+{
+	this->jumps++;
+	return "LBB0_" + to_string(this->jumps);
 }
