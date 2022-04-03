@@ -16,17 +16,17 @@ using namespace std;
 int main(int argn, const char **argv)
 {
   stringstream in;
-  if (argn==2)
+  if (argn == 2)
   {
-     ifstream lecture(argv[1]);
-     in << lecture.rdbuf();
+    ifstream lecture(argv[1]);
+    in << lecture.rdbuf();
   }
   else
   {
-      cerr << "usage: ifcc path/to/file.c" << endl ;
-      exit(1);
+    cerr << "usage: ifcc path/to/file.c" << endl;
+    exit(1);
   }
-  
+
   ANTLRInputStream input(in.str());
 
   ifccLexer lexer(&input);
@@ -35,33 +35,33 @@ int main(int argn, const char **argv)
   tokens.fill();
 
   ifccParser parser(&tokens);
-  tree::ParseTree* tree = parser.axiom();
+  tree::ParseTree *tree = parser.axiom();
 
-  if(parser.getNumberOfSyntaxErrors() != 0)
+  if (parser.getNumberOfSyntaxErrors() != 0)
   {
-      cerr << "error: syntax error during parsing" << endl;
-      exit(1);
+    cerr << "ERROR: syntax error during parsing" << endl;
+    exit(1);
   }
 
-  
+  // visit the grammar tree and generate the assembly code
   CodeGenVisitor v;
-  v.setError(false);
   v.visit(tree);
-  
-  map <string,int> :: iterator iterMAP;
-  for(iterMAP= v.mapWarnings.begin(); iterMAP != v.mapWarnings.end(); iterMAP++)
+
+  // check if there is a warning (unused variable)
+  map<string, Variable>::iterator var;
+  map<string, Function>::iterator fn;
+  map<string, Function> functions = v.getFunctions();
+  for (fn = functions.begin(); fn != functions.end(); fn++)
   {
-    if(iterMAP->second == 0){
-      cout << "#WARNING: variable " << iterMAP->first << " is not used." << endl;
+    for (var = fn->second.vars.begin(); var != fn->second.vars.end(); var++)
+    {
+      if (!var->second.used)
+      {
+        cout << "# WARNING: variable " << var->first << " is not used" << endl;
+      }
     }
   }
-  if(v.getError()==true){
-    return 1;
-  }else{
-    return 0;
-  }
 
-  
-
-  
+  // return 0 if there is no error, 1 otherwise
+  return v.getError() ? 1 : 0;
 }
