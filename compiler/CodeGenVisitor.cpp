@@ -46,6 +46,8 @@ operator<<(ostream &os, Element &element)
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
+	cout << "\t visit Prog" << endl;
+	maxOffset = 0;
 	visitChildren(ctx);
 	return 0;
 }
@@ -67,7 +69,9 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 	{
 		string varname = varnameContext->getText();
 		string type = ctx->TYPE(counter)->getText();
-		int index = (this->getVars().size() + 1) * 8;
+		//int index = (this->getVars().size() + 1) * 8;
+		int index = maxOffset + 8;
+		maxOffset = index;
 		// if the name of the argument is not repeated, save it in the map
 		if (!this->isVarDeclarated(varname))
 		{
@@ -98,10 +102,13 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
+	cout << "\t#visit FN" << endl;
 	string head;
 	string fnName = ctx->VARNAME()->getText();
 	string fnType = ctx->TYPE()->getText();
+	cout << "fnName" << fnName << endl;
 	this->setCurrentFunction(fnName, fnType);
+	cout << " after set current function " << endl;
 // if the machine is from apple, use an _ before the name of the function
 #ifdef __APPLE__
 	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
@@ -157,6 +164,7 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
+	cout << "\t#visit content" << endl;
 	visitChildren(ctx);
 	return 0;
 }
@@ -206,6 +214,7 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 {
+	cout << "\t#visit init" << endl;
 	string type = ctx->TYPE()->getText();
 	// get all the declaration in the line
 	vector<pair<string, ifccParser::ExpressionContext *>> vectorVars = visit(ctx->declaration());
@@ -213,7 +222,9 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	for (auto pair : vectorVars)
 	{
 		string varname = pair.first;
-		int index = (this->getVars().size() + 1) * 8;
+		//int index = (this->getVars().size() + 1) * 8;
+		int index = maxOffset + 8;
+		maxOffset = index;
 		// if varname doesn't exists in the stack (vars), save it
 		if (!this->isVarDeclarated(varname))
 		{
@@ -265,6 +276,7 @@ antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *c
 
 antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 {
+	cout << "\t# visit Dec" << endl;
 	// declarate the variable with no register
 	string varname = ctx->VARNAME()->getText();
 	pair<string, ifccParser::ExpressionContext *> pair;
@@ -310,6 +322,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
 {
+	cout << "\t#visit Array Dec" << endl;
 	// we assume that type is INT for now
 	string type = ctx->TYPE()->getText();
 	// getting the name of the array, CONST is a non-terminal symbol, so no visit
@@ -319,7 +332,7 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 	// getting the number of declared values
 	int nbrValues = ctx->CONST().size() - 1;
 	// array of values
-	vector<int> ArrayVal;
+	//vector<int> ArrayVal;
 	// check that lengths are coherent
 	if (length >= nbrValues)
 	{
@@ -328,7 +341,7 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 		int index = maxOffset + length * 8;
 		maxOffset = index;
 		//this->vars[tabName] = index;
-		this->setVar(tabName, index);
+		this->setVar(tabName, index, type);
 		// pusing tabName in the tab of arrays
 		tabOfArrays.push_back(tabName);
 
@@ -360,14 +373,15 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	string expr = visit(ctx->expression()).as<string>();
 
 	// create temp var
-	string temp = getNewTempVariable();
+	Element temp = getNewTempVariable();
 
 	//check if the table has already been declared
 	
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
 		// get the destination index of the array
-		string index = to_string(this->getVar(tabName));
+		Variable var = this->getVar(tabName);
+		string index = to_string(var.index);
 		
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
@@ -376,11 +390,11 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		cout << "\tmovl " + value + " ,%ebx" << endl;
 		cout << "\timulq %rbx, %rax"<< endl;
 		cout << "\taddq $-" + index + ", %rax" << endl;
-		cout << "\tmovq %rax, " + temp << endl;
+		cout << "\tmovq %rax, " << temp << endl;
 		cout << "\tmovq %rbp, %rax" << endl;
-		cout << "\taddq " + temp + " , %rax" << endl;
-		cout << "\tmovq %rax, " + temp << endl;
-		cout << "\tmovq " + temp + " , %rax" << endl;
+		cout << "\taddq " << temp << " , %rax" << endl;
+		cout << "\tmovq %rax, " << temp << endl;
+		cout << "\tmovq " << temp << " , %rax" << endl;
 		cout << "\tmovq " + expr + ", %r10" << endl;
 		cout << "\tmovq %r10, (%rax)" << endl;
 		
@@ -580,7 +594,9 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 
 Element CodeGenVisitor::getNewTempVariable()
 {
-	int index = (this->getVars().size() + 1) * 8;
+	//int index = (this->getVars().size() + 1) * 8;
+	int index = maxOffset + 8;
+	maxOffset = index;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->setVar(varname, index, "int");
@@ -1066,12 +1082,18 @@ void CodeGenVisitor::setError()
 
 void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
+	cout << "\t#set current function " << endl;
 	Function function;
 	function.type = type;
 	function.vars = {};
+	cout << "1" << endl;
 	this->functions[name] = function;
+	cout << "2" << endl;
 	this->currentFunction = name;
+	cout << "\t # end of set current function" << endl;
 }
+
+
 
 /**
  * @brief get the current function type

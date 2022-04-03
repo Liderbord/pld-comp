@@ -92,6 +92,7 @@ public:
 	string getCurrentFunctionType();
 	map<string, Function> getFunctions();
 	map<string, Variable> getVars();
+	vector<string> tabOfArrays;
 	void setVar(string varname, int index, string type);
 	Variable getVar(string varname);
 	void setVarUsed(string varname);
@@ -103,6 +104,7 @@ public:
 	void setWarning(bool val);
 	bool getWarning();
 	int maxOffset;
+
 
 private:
 	int jumps;											 // counter of jumps on assembly code (used to generate unique labels)
