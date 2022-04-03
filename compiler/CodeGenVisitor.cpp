@@ -26,7 +26,8 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 	int counter = 0;
 	for (auto varnameContext : ctx->VARNAME()) {
 		string varname = varnameContext->getText();
-		int index = (this->getVars().size() + 1) * 8;
+		//int index = (this->getVars().size() + 1) * 8;
+		int index = maxOffset + 8;
 		if (this->isVarNoDeclarated(varname)) {
 			this->setVar(varname, index);
 			if (counter < 6) {
@@ -106,7 +107,9 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	{
 		string varname = paire.first;
 		// type = INT
-		int index = (this->getVars().size() + 1) * 8;
+		//int index = (this->getVars().size() + 1) * 8;
+		int index = maxOffset + 8;
+		maxOffset = index;
 		// if varname already exists in vars, then it's an error
 		if (this->isVarNoDeclarated(varname)) {
 			this->setVar(varname, index);
@@ -116,6 +119,7 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 			if (paire.second != "")
 			{
 				string value = paire.second;
+				cout << "\t# assign " + value + " to " +  to_string(index) + "(%rbp)" << endl;
 				cout << "\tmovl " + value + ", " << EAX << endl;
 				cout << "\tmovl " + EAX + ", -" + to_string(index) + "(%rbp)" << endl;
 			}
@@ -203,7 +207,8 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
 		int index = maxOffset + length * 8;
 		maxOffset = index;
-		this->vars[tabName] = index;
+		//this->vars[tabName] = index;
+		this->setVar(tabName, index);
 		// pusing tabName in the tab of arrays
 		tabOfArrays.push_back(tabName);
 
@@ -242,9 +247,11 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
 		// get the destination index of the array
-		string index = to_string(this->vars[tabName]);
+		string index = to_string(this->getVar(tabName));
+		
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
+		cout << "\t# affect expression to lvalue (case of array)" << endl;
 		cout << "\tmovq $8 , %rax" << endl;
 		cout << "\tmovl " + value + " ,%ebx" << endl;
 		cout << "\timulq %rbx, %rax"<< endl;
@@ -276,10 +283,26 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
 	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
+	ifccParser::ExpressionContext *expressionContext = ctx->expression();
 	if (varnameNode) {
 		string varname = varnameNode->getText();
 		string index = to_string(this->getVar(varname));
-		returnval = "-" + index + "(%rbp)";
+
+		if (expressionContext){
+			string exprString= visit(expressionContext);
+			cout << "\t# access the case and return its value" << endl;
+			string mult = this->operationExpression(exprString, "$8", "imull");
+			string add = this->operationExpression("$-"+index, mult, "add ");
+			cout << "\tmovq %rbp, %rax" << endl;
+			cout << "\taddq " + add + ", %rax" << endl;
+			cout << "\tmovq %rax, " + add << endl;
+			cout << "\tmovq " + add + ", %rax" << endl;
+			returnval = "(%rax)";
+		}
+		else 
+		{
+			returnval = "-" + index + "(%rbp)";
+		}
 	} else {
 		returnval = "$" + ctx->CONST()->getText();
 	}
@@ -287,7 +310,9 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 }
 
 string CodeGenVisitor::getNewTempVariable() {
-	int index = (this->getVars().size() + 1) * 8;
+	//int index = (this->getVars().size() + 1) * 8;
+	int index = maxOffset + 8;
+	maxOffset = index;
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->setVar(varname, index);
