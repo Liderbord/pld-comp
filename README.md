@@ -30,3 +30,7 @@ as my_source_code.s
 ```
 
 That's it! If your code isn't too complex, it should compile just fine 😀
+
+# 🏗️ Developer documentation
+
+Want to contribute to the project? Checkout our [developer documentation](/docs/developers.md) to make sure you understand how it works.

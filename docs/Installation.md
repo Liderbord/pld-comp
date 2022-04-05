@@ -55,19 +55,19 @@ make
 
 If make still doesn't work, try running the runmake script that corresponds for your OS
 
-On Ubuntu: 
+#### On Ubuntu: 
 
 ```bash
 ./runmake_ubuntu.sh
 ```
 
-On macOS: 
+#### On macOS: 
 
 ```bash
 ./runmake_mac.sh
 ```
 
-On fedora: 
+#### On fedora: 
 
 ```bash
 ./runmake_fedora.sh
