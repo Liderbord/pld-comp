@@ -157,7 +157,15 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	visitChildren(ctx);
+	ifccParser::ReturnValueContext *returnValueContext = ctx->returnValue();
+	if (returnValueContext)
+	{
+		visit(returnValueContext);
+	}
+	else
+	{
+		visitChildren(ctx);
+	}
 	return 0;
 }
 
