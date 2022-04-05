@@ -13,9 +13,9 @@ dec: VARNAME ('=' expression)? ;
 affectation: VARNAME '=' expression # affectationExpr;
 expression:
 	expression MULTDIVMOD expression # expressionMultDivMod
-	| expression ADDSUB expression # expressionAddSub
-	| expression ('&=' | '&&') expression # expressionAnd
-	| expression ('|=' | '||') expression # expressionOr
+	| expression ADDSUB=('+' | '-') expression # expressionAddSub
+	| expression ('&' | '&&') expression # expressionAnd
+	| expression ('|' | '||') expression # expressionOr
 	| expression '^' expression # expressionXor
 	| expression '==' expression # expressionEqual
 	| expression '!=' expression # expressionNotEqual
@@ -23,6 +23,8 @@ expression:
 	| expression '<' expression # expressionLess
 	| expression '>=' expression # expressionGreaterEqual
 	| expression '<=' expression # expressionLessEqual
+	| '!' expression # expressionNegation
+	| '-' expression # expressionNegative
 	| '(' expression ')' # expressionPar
 	| fnCall # expressionFn
 	| value # expressionValue;
@@ -37,7 +39,6 @@ ONELINECOMMENT: '//' .*? '\n' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 CONST: [0-9]+;
-ADDSUB: '+' | '-';
 MULTDIVMOD: '*' | '/' | '%';
 CHAR: '\'' .? '\'';
 REF: '&';

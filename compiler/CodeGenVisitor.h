@@ -68,6 +68,8 @@ public:
 	virtual antlrcpp::Any visitExpressionLess(ifccParser::ExpressionLessContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionGreaterEqual(ifccParser::ExpressionGreaterEqualContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionLessEqual(ifccParser::ExpressionLessEqualContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionNegation(ifccParser::ExpressionNegationContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionNegative(ifccParser::ExpressionNegativeContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionFn(ifccParser::ExpressionFnContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override;

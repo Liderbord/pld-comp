@@ -617,7 +617,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAddSub(ifccParser::ExpressionAddSub
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	string operation = ctx->ADDSUB()->getText();
+	string operation = ctx->ADDSUB->getText();
 	if (operation == "+")
 	{
 		cout << "\t# do " << leftval << " + " << rightval << endl;
@@ -822,6 +822,46 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLessEqual(ifccParser::ExpressionLes
 	Element rightval = visit(ctx->expression(1));
 	cout << "\t# do " << leftval << " <= " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "le");
+}
+
+/**
+ * @brief set the operation negation (!) of a expression
+ *
+ * @param ifccParser::ExpressionNegationContext ctx
+ * @return Element (variable or const)
+ */
+
+antlrcpp::Any CodeGenVisitor::visitExpressionNegation(ifccParser::ExpressionNegationContext *ctx)
+{
+	Element element = visit(ctx->expression());
+	Element temporalVariable = getNewTempVariable();
+	cout << "\t# do ! " << element << endl;
+	cout << MOVL << element << ", " << EAX << endl;
+	cout << "cmpl $0, " << EAX << endl;
+	cout << "\tsetne %al" << endl;
+	cout << "\txorb $-1, %al" << endl;
+	cout << "\tandb $1, %al" << endl;
+	cout << "\tmovzbl %al, %eax" << endl;
+	cout << "\tmovl %eax, " << temporalVariable << endl;
+	return temporalVariable;
+}
+
+/**
+ * @brief set the operation negative (-) of a expression
+ *
+ * @param ifccParser::ExpressionNegativeContext ctx
+ * @return Element (variable or const)
+ */
+
+antlrcpp::Any CodeGenVisitor::visitExpressionNegative(ifccParser::ExpressionNegativeContext *ctx)
+{
+	Element element = visit(ctx->expression());
+	Element temporalVariable = getNewTempVariable();
+	cout << "\t# do - " << element << endl;
+	cout << "\txorl %eax, %eax" << endl;
+	cout << "\tsubl " << element << ", %eax" << endl;
+	cout << MOVL << "%eax, " << temporalVariable << endl;
+	return temporalVariable;
 }
 
 /**
