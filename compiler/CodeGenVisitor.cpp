@@ -46,8 +46,8 @@ operator<<(ostream &os, Element &element)
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-	//cout << "\t visit Prog" << endl;
-	
+	// cout << "\t visit Prog" << endl;
+
 	visitChildren(ctx);
 	return 0;
 }
@@ -69,16 +69,14 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 	{
 		string varname = varnameContext->getText();
 		string type = ctx->TYPE(counter)->getText();
-		//int index = (this->getVars().size() + 1) * 8;
-		//int index = maxOffset + 8;
-		//maxOffset = index;
+		// int index = (this->getVars().size() + 1) * 8;
+		// int index = maxOffset + 8;
+		// maxOffset = index;
 
 		int index = this->getMaxOffset() + 8;
 		this->setMaxOffset(index);
 
-		//int index = this->getnewindex
-
-
+		// int index = this->getnewindex
 
 		// if the name of the argument is not repeated, save it in the map
 		if (!this->isVarDeclarated(varname))
@@ -110,13 +108,13 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
-	//cout << "\t#visit FN" << endl;
+	// cout << "\t#visit FN" << endl;
 	string head;
 	string fnName = ctx->VARNAME()->getText();
 	string fnType = ctx->TYPE()->getText();
-	//cout << "fnName" << fnName << endl;
+	// cout << "fnName" << fnName << endl;
 	this->setCurrentFunction(fnName, fnType);
-	//cout << " after set current function " << endl;
+	// cout << " after set current function " << endl;
 // if the machine is from apple, use an _ before the name of the function
 #ifdef __APPLE__
 	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
@@ -237,7 +235,7 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 {
-	cout << "\t#visit init" << endl;
+	cout << "\t# visit init" << endl;
 	string type = ctx->TYPE()->getText();
 	// get all the declaration in the line
 	vector<pair<string, ifccParser::ExpressionContext *>> vectorVars = visit(ctx->declaration());
@@ -245,10 +243,8 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	for (auto pair : vectorVars)
 	{
 		string varname = pair.first;
-		//int index = (this->getVars().size() + 1) * 8;
-		//int index = maxOffset + 8;
-		//maxOffset = index;
 
+		// get a index to allocate the variable in the stack
 		int index = this->getMaxOffset() + 8;
 		this->setMaxOffset(index);
 
@@ -303,7 +299,6 @@ antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *c
 
 antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 {
-	// cout << "\t# visit Dec" << endl;
 	// declarate the variable with no register
 	string varname = ctx->VARNAME()->getText();
 	pair<string, ifccParser::ExpressionContext *> pair;
@@ -347,84 +342,79 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 /**
  * @brief used to declare an array, put it in vars and generate assembly code in case of affect
- * 
+ *
  * @param ctx ArrayDeclarationContext *ctx
- * @return antlrcpp::Any 
+ * @return antlrcpp::Any
  */
 
 antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
 {
-	
+
 	// we assume that type is INT for now
 	string type = ctx->TYPE()->getText();
 	// getting the name of the array, CONST is a non-terminal symbol, so no visit
 	string tabName = ctx->VARNAME()->getText();
 	// getting its length, which is in CONST()[0]
-	int length = stoi(ctx->CONST(0)->getText()); 
+	int length = stoi(ctx->CONST(0)->getText());
 	// getting the number of declared values
 	int nbrValues = ctx->CONST().size() - 1;
 
 	// check that lengths are coherent
 	if (length >= nbrValues)
 	{
-		
+
 		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
 		int index = this->getMaxOffset() + length * 8;
 		this->setMaxOffset(index);
-
-		//this->vars[tabName] = index;
 		this->setVar(tabName, index, type);
-		// pusing tabName in the tab of arrays
-		tabOfArrays.push_back(tabName);
 
-		for (int i=1; i<=nbrValues; i++){
-			//arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
+		for (int i = 1; i <= nbrValues; i++)
+		{
+			// arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
 			string value = ctx->CONST(i)->getText();
 			// moving the values to the stack
-			cout << "\t# Moving $ " << value << " to its location in the stack" << endl;
-			cout << "\tmovl $" + value + ", -" + to_string( index - (i-1)*8 ) + "(%rbp)" << endl;
+			cout << "\t# moving " << value << " to its location in the stack" << endl;
+			cout << "\tmovl $" << value << ", -" << to_string(index - (i - 1) * 8) << "(%rbp)" << endl;
 		}
 	}
-	else 
+	else
 	{
-		error = true;
+		cout << "# ERROR: array " << tabName << " has a length of " << length << " but only " << nbrValues << " values are declared" << endl;
+		this->setError();
 	}
 	return 0;
 }
 
-
 /**
  * @brief get the adress of the destination case of the array, and put the value in it
- * 
+ *
  * @param ctx AffectationArrayContext *ctx
- * @return antlrcpp::Any 
+ * @return antlrcpp::Any
  */
 
 antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
 {
-	// getting the Array's variable name
 	string tabName = ctx->VARNAME()->getText();
 	// getting the variable/const by using the Value visitor
 	Element value = visit(ctx->expression(0));
 	Element expr = visit(ctx->expression(1));
 
-	//cout << "expr = " << expr << endl;
-	// create temp var
+	//  create temp var
 	Element temp = getNewTempVariable();
 
-	//check if the table has already been declared
-	
-	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
+	// check if the table has already been declared
+
+	if (this->isVarDeclarated(tabName))
 	{
 
 		// get the destination index of the array
 		Variable var = this->getVar(tabName);
 		string index = to_string(var.index);
-		// TODO : Check if value > size of array, if its the case -> then its an error
+		// set assembly code of the affectation
 		cout << "\t# affect expression to lvalue (case of array)" << endl;
 		cout << "\tmovq $8 , %rax" << endl;
 		cout << "\tmovl " << value << " ,%ebx" << endl;
-		cout << "\timulq %rbx, %rax"<< endl;
+		cout << "\timulq %rbx, %rax" << endl;
 		cout << "\taddq $-" + index + ", %rax" << endl;
 		cout << "\tmovq %rax, " << temp << endl;
 		cout << "\tmovq %rbp, %rax" << endl;
@@ -433,20 +423,15 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		cout << "\tmovq " << temp << " , %rax" << endl;
 		cout << "\tmovq " << expr << ", %r10" << endl;
 		cout << "\tmovq %r10, (%rax)" << endl;
-		
 	}
 	else
 	{
-   		error = true;
+		cout << "# ERROR: array " << tabName << " not declared" << endl;
+		this->setError();
 	}
-	
-	
-
 
 	return 0;
-
 }
-
 
 /**
  * @brief return the register or constant ($) of the selected value
@@ -455,7 +440,6 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
  * @param ifccParser::ValueContext ctx
  * @return antlrcpp::Any
  */
-
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
@@ -470,29 +454,29 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	if (varnameNode)
 	{
 		string varname = varnameNode->getText();
-		Element temp = getNewTempVariable();
 		// if variable is declared, return it
 		if (this->isVarDeclarated(varname))
 		{
-			if (expressionContext){
-				Element index = Element(this->getVar(varname).index, "int", true);
+			// if there's an expression, means that we're in the case of an array
+			if (expressionContext)
+			{
+				// get the content of the storage in the index selected of the array
+				Element temporalVariable = getNewTempVariable();
+				Element array = Element(this->getVar(varname).index, "int", true);
 				Element eight = Element(8, "int", false);
-				Element exprString= visit(expressionContext);
+				Element index = visit(expressionContext);
 				cout << "\t# access the case and return its value" << endl;
-				Element mult = this->operationExpression(exprString, eight, "imull");
-				//Element add = this->operationExpression(index, mult, "add ");
-				//cout << "\tmovq %rbp, %rax" << endl;
-				cout << "\taddq " << mult << ", %rbp" << endl;
-				cout << "\tmovl -" << index.value << "(%rbp), %eax" << endl;
-				cout << "\tsubq " << mult << ", %rbp" << endl;
-				cout << "\tmovl %eax, " << temp << endl;
-				
-				return temp;
-
-			} else {
+				Element indexOnBits = this->operationExpression(index, eight, "imull");
+				cout << "\taddq " << indexOnBits << ", %rbp" << endl;
+				cout << "\tmovl -" << array.value << "(%rbp), %eax" << endl;
+				cout << "\tsubq " << indexOnBits << ", %rbp" << endl;
+				cout << "\tmovl %eax, " << temporalVariable << endl;
+				return temporalVariable;
+			}
+			else
+			{
 				return Element(this->getVar(varname).index, this->getVar(varname).type, true);
 			}
-			
 		}
 		// if variable is not declared, throw an error
 		else
@@ -515,8 +499,6 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	int number = stoi(text);
 	return Element(number, "int", false);
 }
-
-
 
 /**
  * @brief set a if/else structure using jumps in assembly code
@@ -632,16 +614,16 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 
 Element CodeGenVisitor::getNewTempVariable()
 {
-	//int index = (this->getVars().size() + 1) * 8;
-	//int index = maxOffset + 8;
-	//maxOffset = index;
-
+	// get a memory address for the new variable
 	int index = this->getMaxOffset() + 8;
+	// save new index as the top of the stack for the current function
 	this->setMaxOffset(index);
+	// save the index in the compilator stack of the current function
 	string indexString = to_string(index);
-	string varname = "temp" + indexString;
+	string varname = "temp" + indexString; // name compose of temp + index, ex: temp0
 	this->setVar(varname, index, "int");
 	this->setVarUsed(varname);
+	// return the variable as an Element (variable/const)
 	return Element(index, "int", true);
 }
 
@@ -1026,11 +1008,13 @@ antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext 
 
 antlrcpp::Any CodeGenVisitor::visitFnCall(ifccParser::FnCallContext *ctx)
 {
+	// visit all the arguments and assign them to the EDI registers (6 max)
 	ifccParser::ArgsContext *argsContext = ctx->args();
 	if (argsContext)
 	{
 		visit(argsContext);
 	}
+	// call the selected function
 	string fnName = ctx->VARNAME()->getText();
 	string call;
 #ifdef __APPLE__
@@ -1125,13 +1109,10 @@ void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
 	Function function;
 	function.type = type;
-	function.vars = {};	
+	function.vars = {};
 	this->functions[name] = function;
 	this->currentFunction = name;
-	
 }
-
-
 
 /**
  * @brief get the current function type
@@ -1144,11 +1125,10 @@ string CodeGenVisitor::getCurrentFunctionType()
 	return this->functions[this->currentFunction].type;
 }
 
-
 /**
  * @brief get the current max offset of the function
- * 
- * @return int 
+ *
+ * @return int
  */
 
 int CodeGenVisitor::getMaxOffset()
@@ -1156,18 +1136,16 @@ int CodeGenVisitor::getMaxOffset()
 	return this->functions[this->currentFunction].maxOffset;
 }
 
-
 /**
  * @brief set the current max offset of the function
- * 
- * @param value 
+ *
+ * @param value
  */
 
 void CodeGenVisitor::setMaxOffset(int value)
 {
 	this->functions[this->currentFunction].maxOffset = value;
 }
-
 
 /**
  * @brief get all the functions and their stack
