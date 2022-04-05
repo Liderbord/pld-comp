@@ -345,7 +345,12 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 	return 0;
 }
 
-
+/**
+ * @brief used to declare an array, put it in vars and generate assembly code in case of affect
+ * 
+ * @param ctx ArrayDeclarationContext *ctx
+ * @return antlrcpp::Any 
+ */
 
 antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
 {
@@ -356,20 +361,14 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 	string tabName = ctx->VARNAME()->getText();
 	// getting its length, which is in CONST()[0]
 	int length = stoi(ctx->CONST(0)->getText()); 
-	//cout << "length" << length << endl;
 	// getting the number of declared values
 	int nbrValues = ctx->CONST().size() - 1;
 
-	// array of values
-	//vector<int> ArrayVal;
 	// check that lengths are coherent
 	if (length >= nbrValues)
 	{
 		
 		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
-		//int index = maxOffset + length * 8;
-		//maxOffset = index;
-
 		int index = this->getMaxOffset() + length * 8;
 		this->setMaxOffset(index);
 
@@ -394,15 +393,18 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 }
 
 
+/**
+ * @brief get the adress of the destination case of the array, and put the value in it
+ * 
+ * @param ctx AffectationArrayContext *ctx
+ * @return antlrcpp::Any 
+ */
+
 antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
 {
-	//cout << "array affect" << endl;
 	// getting the Array's variable name
 	string tabName = ctx->VARNAME()->getText();
 	// getting the variable/const by using the Value visitor
-	//string value = visit(ctx->value()).as<string>();
-	//value = value*8;
-	//cout << "value = " << value << endl;
 	Element value = visit(ctx->expression(0));
 	Element expr = visit(ctx->expression(1));
 
@@ -414,13 +416,11 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
-		//cout << "1" << endl;
+
 		// get the destination index of the array
 		Variable var = this->getVar(tabName);
 		string index = to_string(var.index);
-		//cout << "index " << index << endl;
 		// TODO : Check if value > size of array, if its the case -> then its an error
-		//mult
 		cout << "\t# affect expression to lvalue (case of array)" << endl;
 		cout << "\tmovq $8 , %rax" << endl;
 		cout << "\tmovl " << value << " ,%ebx" << endl;
@@ -455,9 +455,6 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
  * @param ifccParser::ValueContext ctx
  * @return antlrcpp::Any
  */
-
-
-
 
 
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
@@ -518,6 +515,8 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	int number = stoi(text);
 	return Element(number, "int", false);
 }
+
+
 
 /**
  * @brief set a if/else structure using jumps in assembly code
@@ -639,7 +638,6 @@ Element CodeGenVisitor::getNewTempVariable()
 
 	int index = this->getMaxOffset() + 8;
 	this->setMaxOffset(index);
-
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->setVar(varname, index, "int");
@@ -1125,16 +1123,12 @@ void CodeGenVisitor::setError()
 
 void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
-	cout << "\t#set current function " << endl;
 	Function function;
 	function.type = type;
-	
-	function.vars = {};
-	//cout << "1" << endl;
+	function.vars = {};	
 	this->functions[name] = function;
-	//cout << "2" << endl;
 	this->currentFunction = name;
-	//cout << "\t # end of set current function" << endl;	
+	
 }
 
 
@@ -1151,11 +1145,23 @@ string CodeGenVisitor::getCurrentFunctionType()
 }
 
 
+/**
+ * @brief get the current max offset of the function
+ * 
+ * @return int 
+ */
+
 int CodeGenVisitor::getMaxOffset()
 {
 	return this->functions[this->currentFunction].maxOffset;
 }
 
+
+/**
+ * @brief set the current max offset of the function
+ * 
+ * @param value 
+ */
 
 void CodeGenVisitor::setMaxOffset(int value)
 {
