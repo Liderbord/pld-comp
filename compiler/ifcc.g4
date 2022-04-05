@@ -15,7 +15,7 @@ arrayDec: TYPE VARNAME '['CONST']'  ('=' '{' CONST (',' CONST)* '}' )?  ';' #arr
 
 
 affectation: VARNAME '=' expression # affectationExpr
-	| VARNAME '[' value ']' '=' expression #affectationArray;
+	| VARNAME '[' expression ']' '=' expression #affectationArray;
 
 expression:
 	expression MULTDIVMOD expression # expressionMultDivMod

@@ -46,7 +46,7 @@ operator<<(ostream &os, Element &element)
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-	cout << "\t visit Prog" << endl;
+	//cout << "\t visit Prog" << endl;
 	maxOffset = 0;
 	visitChildren(ctx);
 	return 0;
@@ -102,13 +102,13 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
-	cout << "\t#visit FN" << endl;
+	//cout << "\t#visit FN" << endl;
 	string head;
 	string fnName = ctx->VARNAME()->getText();
 	string fnType = ctx->TYPE()->getText();
-	cout << "fnName" << fnName << endl;
+	//cout << "fnName" << fnName << endl;
 	this->setCurrentFunction(fnName, fnType);
-	cout << " after set current function " << endl;
+	//cout << " after set current function " << endl;
 // if the machine is from apple, use an _ before the name of the function
 #ifdef __APPLE__
 	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
@@ -164,7 +164,7 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	cout << "\t#visit content" << endl;
+	
 	visitChildren(ctx);
 	return 0;
 }
@@ -276,7 +276,7 @@ antlrcpp::Any CodeGenVisitor::visitDeclaration(ifccParser::DeclarationContext *c
 
 antlrcpp::Any CodeGenVisitor::visitDec(ifccParser::DecContext *ctx)
 {
-	cout << "\t# visit Dec" << endl;
+	// cout << "\t# visit Dec" << endl;
 	// declarate the variable with no register
 	string varname = ctx->VARNAME()->getText();
 	pair<string, ifccParser::ExpressionContext *> pair;
@@ -322,15 +322,17 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 
 antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
 {
-	cout << "\t#visit Array Dec" << endl;
+	
 	// we assume that type is INT for now
 	string type = ctx->TYPE()->getText();
 	// getting the name of the array, CONST is a non-terminal symbol, so no visit
 	string tabName = ctx->VARNAME()->getText();
 	// getting its length, which is in CONST()[0]
 	int length = stoi(ctx->CONST(0)->getText()); 
+	//cout << "length" << length << endl;
 	// getting the number of declared values
 	int nbrValues = ctx->CONST().size() - 1;
+
 	// array of values
 	//vector<int> ArrayVal;
 	// check that lengths are coherent
@@ -363,15 +365,17 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 
 antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
 {
-	
+	//cout << "array affect" << endl;
 	// getting the Array's variable name
 	string tabName = ctx->VARNAME()->getText();
 	// getting the variable/const by using the Value visitor
-	string value = visit(ctx->value()).as<string>();
+	//string value = visit(ctx->value()).as<string>();
 	//value = value*8;
+	//cout << "value = " << value << endl;
+	Element value = visit(ctx->expression(0));
+	Element expr = visit(ctx->expression(1));
 
-	string expr = visit(ctx->expression()).as<string>();
-
+	//cout << "expr = " << expr << endl;
 	// create temp var
 	Element temp = getNewTempVariable();
 
@@ -379,15 +383,16 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 	
 	if ( find(tabOfArrays.begin(), tabOfArrays.end(), tabName) != tabOfArrays.end() )
 	{
+		//cout << "1" << endl;
 		// get the destination index of the array
 		Variable var = this->getVar(tabName);
 		string index = to_string(var.index);
-		
+		//cout << "index " << index << endl;
 		// TODO : Check if value > size of array, if its the case -> then its an error
 		//mult
 		cout << "\t# affect expression to lvalue (case of array)" << endl;
 		cout << "\tmovq $8 , %rax" << endl;
-		cout << "\tmovl " + value + " ,%ebx" << endl;
+		cout << "\tmovl " << value << " ,%ebx" << endl;
 		cout << "\timulq %rbx, %rax"<< endl;
 		cout << "\taddq $-" + index + ", %rax" << endl;
 		cout << "\tmovq %rax, " << temp << endl;
@@ -395,7 +400,7 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		cout << "\taddq " << temp << " , %rax" << endl;
 		cout << "\tmovq %rax, " << temp << endl;
 		cout << "\tmovq " << temp << " , %rax" << endl;
-		cout << "\tmovq " + expr + ", %r10" << endl;
+		cout << "\tmovq " << expr << ", %r10" << endl;
 		cout << "\tmovq %r10, (%rax)" << endl;
 		
 	}
@@ -460,6 +465,7 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
 	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
+	ifccParser::ExpressionContext *expressionContext = ctx->expression();
 	antlr4::tree::TerminalNode *charNode = ctx->CHAR();
 	antlr4::tree::TerminalNode *constNode = ctx->CONST();
 	// if the value is a varname, get the register index from
@@ -468,10 +474,29 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 	if (varnameNode)
 	{
 		string varname = varnameNode->getText();
+		Element temp = getNewTempVariable();
 		// if variable is declared, return it
 		if (this->isVarDeclarated(varname))
 		{
-			return Element(this->getVar(varname).index, this->getVar(varname).type, true);
+			if (expressionContext){
+				Element index = Element(this->getVar(varname).index, "int", true);
+				Element eight = Element(8, "int", false);
+				Element exprString= visit(expressionContext);
+				cout << "\t# access the case and return its value" << endl;
+				Element mult = this->operationExpression(exprString, eight, "imull");
+				//Element add = this->operationExpression(index, mult, "add ");
+				//cout << "\tmovq %rbp, %rax" << endl;
+				cout << "\taddq " << mult << ", %rbp" << endl;
+				cout << "\tmovl -" << index.value << "(%rbp), %eax" << endl;
+				cout << "\tsubq " << mult << ", %rbp" << endl;
+				cout << "\tmovl %eax, " << temp << endl;
+				
+				return temp;
+
+			} else {
+				return Element(this->getVar(varname).index, this->getVar(varname).type, true);
+			}
+			
 		}
 		// if variable is not declared, throw an error
 		else
@@ -1082,15 +1107,15 @@ void CodeGenVisitor::setError()
 
 void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
-	cout << "\t#set current function " << endl;
+	//cout << "\t#set current function " << endl;
 	Function function;
 	function.type = type;
 	function.vars = {};
-	cout << "1" << endl;
+	//cout << "1" << endl;
 	this->functions[name] = function;
-	cout << "2" << endl;
+	//cout << "2" << endl;
 	this->currentFunction = name;
-	cout << "\t # end of set current function" << endl;
+	//cout << "\t # end of set current function" << endl;
 }
 
 
