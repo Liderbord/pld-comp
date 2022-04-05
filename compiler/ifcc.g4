@@ -16,7 +16,7 @@ expression:
 	| expression ADDSUB expression # expressionAddSub
 	| expression ('&=' | '&&') expression # expressionAnd
 	| expression ('|=' | '||') expression # expressionOr
-	| expression '^=' expression # expressionXor
+	| expression '^' expression # expressionXor
 	| expression '==' expression # expressionEqual
 	| expression '!=' expression # expressionNotEqual
 	| expression '>' expression # expressionGreater
