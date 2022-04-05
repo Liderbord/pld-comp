@@ -43,6 +43,7 @@ struct Variable
 
 struct Function
 {
+	int maxOffset = 0;
 	string type;								// int/char/void
 	map<string, Variable> vars; // stack (variable name -> variable information)
 };
@@ -90,6 +91,8 @@ public:
 	string getMove(string);
 	void setCurrentFunction(string name, string type);
 	string getCurrentFunctionType();
+	int getMaxOffset();
+	void setMaxOffset(int value);
 	map<string, Function> getFunctions();
 	map<string, Variable> getVars();
 	vector<string> tabOfArrays;
@@ -103,7 +106,7 @@ public:
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
-	int maxOffset;
+	//int maxOffset;
 
 
 private:

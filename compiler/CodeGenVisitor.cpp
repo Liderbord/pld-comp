@@ -47,7 +47,7 @@ operator<<(ostream &os, Element &element)
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
 	//cout << "\t visit Prog" << endl;
-	maxOffset = 0;
+	
 	visitChildren(ctx);
 	return 0;
 }
@@ -70,8 +70,16 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 		string varname = varnameContext->getText();
 		string type = ctx->TYPE(counter)->getText();
 		//int index = (this->getVars().size() + 1) * 8;
-		int index = maxOffset + 8;
-		maxOffset = index;
+		//int index = maxOffset + 8;
+		//maxOffset = index;
+
+		int index = this->getMaxOffset() + 8;
+		this->setMaxOffset(index);
+
+		//int index = this->getnewindex
+
+
+
 		// if the name of the argument is not repeated, save it in the map
 		if (!this->isVarDeclarated(varname))
 		{
@@ -238,8 +246,12 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	{
 		string varname = pair.first;
 		//int index = (this->getVars().size() + 1) * 8;
-		int index = maxOffset + 8;
-		maxOffset = index;
+		//int index = maxOffset + 8;
+		//maxOffset = index;
+
+		int index = this->getMaxOffset() + 8;
+		this->setMaxOffset(index);
+
 		// if varname doesn't exists in the stack (vars), save it
 		if (!this->isVarDeclarated(varname))
 		{
@@ -355,8 +367,12 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 	{
 		
 		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
-		int index = maxOffset + length * 8;
-		maxOffset = index;
+		//int index = maxOffset + length * 8;
+		//maxOffset = index;
+
+		int index = this->getMaxOffset() + length * 8;
+		this->setMaxOffset(index);
+
 		//this->vars[tabName] = index;
 		this->setVar(tabName, index, type);
 		// pusing tabName in the tab of arrays
@@ -618,8 +634,12 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 Element CodeGenVisitor::getNewTempVariable()
 {
 	//int index = (this->getVars().size() + 1) * 8;
-	int index = maxOffset + 8;
-	maxOffset = index;
+	//int index = maxOffset + 8;
+	//maxOffset = index;
+
+	int index = this->getMaxOffset() + 8;
+	this->setMaxOffset(index);
+
 	string indexString = to_string(index);
 	string varname = "temp" + indexString;
 	this->setVar(varname, index, "int");
@@ -1018,7 +1038,7 @@ antlrcpp::Any CodeGenVisitor::visitFnCall(ifccParser::FnCallContext *ctx)
 #ifdef __APPLE__
 	call = "\tcallq	_" + fnName;
 #else
-	call = "\tcallq	_" + fnName;
+	call = "\tcallq	" + fnName;
 #endif
 	cout << call << endl;
 	return 0;
@@ -1105,15 +1125,16 @@ void CodeGenVisitor::setError()
 
 void CodeGenVisitor::setCurrentFunction(string name, string type)
 {
-	//cout << "\t#set current function " << endl;
+	cout << "\t#set current function " << endl;
 	Function function;
 	function.type = type;
+	
 	function.vars = {};
 	//cout << "1" << endl;
 	this->functions[name] = function;
 	//cout << "2" << endl;
 	this->currentFunction = name;
-	//cout << "\t # end of set current function" << endl;
+	//cout << "\t # end of set current function" << endl;	
 }
 
 
@@ -1128,6 +1149,19 @@ string CodeGenVisitor::getCurrentFunctionType()
 {
 	return this->functions[this->currentFunction].type;
 }
+
+
+int CodeGenVisitor::getMaxOffset()
+{
+	return this->functions[this->currentFunction].maxOffset;
+}
+
+
+void CodeGenVisitor::setMaxOffset(int value)
+{
+	this->functions[this->currentFunction].maxOffset = value;
+}
+
 
 /**
  * @brief get all the functions and their stack

@@ -244,7 +244,7 @@ if args.multithread > 0:
         # Run tests in pools
         multiple_results = [pool.apply_async(run_test, (jobname,)) for jobname in jobs]
         # print test output
-        [res.get(timeout=1) for res in multiple_results]
+        [res.get(timeout=5) for res in multiple_results]
 else:
     for jobname in jobs:
         run_test(jobname)
