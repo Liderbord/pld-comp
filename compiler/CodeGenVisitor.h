@@ -102,6 +102,8 @@ public:
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
+	string content;		 // temporal string that holds the assembly code of a function's body
+	stringstream fout; // stream to add assembly code to the content of the function
 
 private:
 	int jumps;											 // counter of jumps on assembly code (used to generate unique labels)
