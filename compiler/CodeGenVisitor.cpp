@@ -164,9 +164,24 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
-	
-	visitChildren(ctx);
-	return 0;
+	ifccParser::ReturnValueContext *returnValueContext = ctx->returnValue();
+	if (returnValueContext)
+	{
+		visit(returnValueContext);
+		return 1;
+	}
+	else
+	{
+		if (ctx->content())
+		{
+			return visitChildren(ctx);
+		}
+		else
+		{
+			visitChildren(ctx);
+			return 0;
+		}
+	}
 }
 
 /**************************** FUNCTION STATEMENTS ****************************/
@@ -429,38 +444,6 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 
 
 
-/*antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx) 
-{
-	string returnval;
-	antlr4::tree::TerminalNode * varnameNode = ctx->VARNAME();
-	ifccParser::ExpressionContext *expressionContext = ctx->expression();
-	if (varnameNode) {
-		string varname = varnameNode->getText();
-		string index = to_string(this->getVar(varname));
-
-		if (expressionContext){
-			string exprString= visit(expressionContext);
-			cout << "\t# access the case and return its value" << endl;
-			string mult = this->operationExpression(exprString, "$8", "imull");
-			string add = this->operationExpression("$-"+index, mult, "add ");
-			cout << "\tmovq %rbp, %rax" << endl;
-			cout << "\taddq " + add + ", %rax" << endl;
-			cout << "\tmovq %rax, " + add << endl;
-			cout << "\tmovq " + add + ", %rax" << endl;
-			returnval = "(%rax)";
-		}
-		else 
-		{
-			returnval = "-" + index + "(%rbp)";
-		}
-	} else {
-		returnval = "$" + ctx->CONST()->getText();
-	}
-	return returnval;
-}*/
-
-
-
 antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
@@ -595,15 +578,30 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	// set the jump label of the condition
 	cout << jumpCondition << ":" << endl;
 	// get the condition (var/const) of the while
-	Element expval = visit(ctx->expression());
+	Element element = visit(ctx->expression());
 	// set the condition in assembly code
-	cout << "\tcmpl $0, " << expval << endl; // we're comparing the result with 0
+	// if the condition is a var, compare it directly
+	if (element.var)
+	{
+		cout << "\tcmpl $0, " << element << endl; // we're comparing the result with 0
+	}
+	// if the condition is a const, put it on EAX and compare it
+	else
+	{
+		cout << MOVL << element << ", " << EAX << endl;
+		cout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
+	}
 	// set the jump condition in assembly code (if condition is 0, jump to the end)
 	cout << "\tje " << jumpEnd << endl;
 	// set the while's content
-	visit(ctx->content());
-	// set the jump to the condition
-	cout << "\tjmp " << jumpCondition << endl;
+	int returned = visit(ctx->content());
+	cout << "# RETURNED " << returned << endl;
+	// if the content doesn't contain a return statement, set the jump to the condition
+	if (returned == 0)
+	{
+		// set the jump to the condition
+		cout << "\tjmp " << jumpCondition << endl;
+	}
 	// set the jump label of the while's end
 	cout << jumpEnd << ":" << endl;
 	return 0;
