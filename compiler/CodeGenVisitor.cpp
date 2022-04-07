@@ -403,34 +403,26 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
 {
 	string tabName = ctx->VARNAME()->getText();
-	// getting the variable/const by using the Value visitor
-	Element value = visit(ctx->expression(0));
-	Element expr = visit(ctx->expression(1));
-
-	//  create temp var
-	Element temp = getNewTempVariable();
 
 	// check if the table has already been declared
-
 	if (this->isVarDeclarated(tabName))
 	{
+		// getting the variable/const by using the Value visitor
+		Element elementIndex = visit(ctx->expression(0));
+		Element newValue = visit(ctx->expression(1));
+		Element eight = Element(8, "int", false);
 
-		// get the destination index of the array
+		// get the destination index of the array (the first element of the array)
 		Variable var = this->getVar(tabName);
-		string index = to_string(var.index);
+		Element arrayFirstElement = Element(-var.index, "int", false);
+
+		// calculate the the index  0, 1, 2... multiplied by 8, to get the offset of the array
+		Element offset = this->operationExpression(elementIndex, eight, "imull");
+		// calculate the exact address of the element in the array (indexFirstElement + offset)
+		Element element = this->operationExpression(arrayFirstElement, offset, "addl");
 		// set assembly code of the affectation
 		this->fout << "\t# affect expression to lvalue (case of array)" << endl;
-		this->fout << "\tmovq $8 , %rax" << endl;
-		this->fout << "\tmovl " << value << " ,%ebx" << endl;
-		this->fout << "\timulq %rbx, %rax" << endl;
-		this->fout << "\taddq $-" + index + ", %rax" << endl;
-		this->fout << "\tmovq %rax, " << temp << endl;
-		this->fout << "\tmovq %rbp, %rax" << endl;
-		this->fout << "\taddq " << temp << " , %rax" << endl;
-		this->fout << "\tmovq %rax, " << temp << endl;
-		this->fout << "\tmovq " << temp << " , %rax" << endl;
-		this->fout << "\tmovq " << expr << ", %r10" << endl;
-		this->fout << "\tmovq %r10, (%rax)" << endl;
+		this->fout << "\tmovq " << newValue << ", " << element.value << "(%rbp)" << endl;
 	}
 	else
 	{
