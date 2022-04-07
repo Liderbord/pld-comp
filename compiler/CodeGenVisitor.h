@@ -43,6 +43,7 @@ struct Variable
 
 struct Function
 {
+	int maxOffset = 0;
 	string type;								// int/char/void
 	map<string, Variable> vars; // stack (variable name -> variable information)
 };
@@ -80,6 +81,8 @@ public:
 	virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override;
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
+	virtual antlrcpp::Any visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx) override ;
+	virtual antlrcpp::Any visitAffectationArray(ifccParser::AffectationArrayContext *ctx) override ;
 	// Helpers
 	Element getNewTempVariable();
 	Element operationExpression(Element rightval, Element leftval, string operation);
@@ -88,8 +91,11 @@ public:
 	string getMove(string);
 	void setCurrentFunction(string name, string type);
 	string getCurrentFunctionType();
+	int getMaxOffset();
+	void setMaxOffset(int value);
 	map<string, Function> getFunctions();
 	map<string, Variable> getVars();
+	vector<string> tabOfArrays;
 	void setVar(string varname, int index, string type);
 	Variable getVar(string varname);
 	void setVarUsed(string varname);
@@ -100,6 +106,8 @@ public:
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
+	//int maxOffset;
+
 
 private:
 	int jumps;											 // counter of jumps on assembly code (used to generate unique labels)
