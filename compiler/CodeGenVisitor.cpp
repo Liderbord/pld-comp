@@ -46,8 +46,6 @@ operator<<(ostream &os, Element &element)
 
 antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-	// cout << "\t visit Prog" << endl;
-
 	visitChildren(ctx);
 	return 0;
 }
@@ -246,7 +244,6 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 
 antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 {
-	cout << "\t# visit init" << endl;
 	string type = ctx->TYPE()->getText();
 	// get all the declaration in the line
 	vector<pair<string, ifccParser::ExpressionContext *>> vectorVars = visit(ctx->declaration());
@@ -384,13 +381,13 @@ antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclaration
 			// arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
 			string value = ctx->CONST(i)->getText();
 			// moving the values to the stack
-			cout << "\t# moving " << value << " to its location in the stack" << endl;
-			cout << "\tmovl $" << value << ", -" << to_string(index - (i - 1) * 8) << "(%rbp)" << endl;
+			this->fout << "\t# moving " << value << " to its location in the stack" << endl;
+			this->fout << "\tmovl $" << value << ", -" << to_string(index - (i - 1) * 8) << "(%rbp)" << endl;
 		}
 	}
 	else
 	{
-		cout << "# ERROR: array " << tabName << " has a length of " << length << " but only " << nbrValues << " values are declared" << endl;
+		this->fout << "# ERROR: array " << tabName << " has a length of " << length << " but only " << nbrValues << " values are declared" << endl;
 		this->setError();
 	}
 	return 0;
@@ -422,22 +419,22 @@ antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArray
 		Variable var = this->getVar(tabName);
 		string index = to_string(var.index);
 		// set assembly code of the affectation
-		cout << "\t# affect expression to lvalue (case of array)" << endl;
-		cout << "\tmovq $8 , %rax" << endl;
-		cout << "\tmovl " << value << " ,%ebx" << endl;
-		cout << "\timulq %rbx, %rax" << endl;
-		cout << "\taddq $-" + index + ", %rax" << endl;
-		cout << "\tmovq %rax, " << temp << endl;
-		cout << "\tmovq %rbp, %rax" << endl;
-		cout << "\taddq " << temp << " , %rax" << endl;
-		cout << "\tmovq %rax, " << temp << endl;
-		cout << "\tmovq " << temp << " , %rax" << endl;
-		cout << "\tmovq " << expr << ", %r10" << endl;
-		cout << "\tmovq %r10, (%rax)" << endl;
+		this->fout << "\t# affect expression to lvalue (case of array)" << endl;
+		this->fout << "\tmovq $8 , %rax" << endl;
+		this->fout << "\tmovl " << value << " ,%ebx" << endl;
+		this->fout << "\timulq %rbx, %rax" << endl;
+		this->fout << "\taddq $-" + index + ", %rax" << endl;
+		this->fout << "\tmovq %rax, " << temp << endl;
+		this->fout << "\tmovq %rbp, %rax" << endl;
+		this->fout << "\taddq " << temp << " , %rax" << endl;
+		this->fout << "\tmovq %rax, " << temp << endl;
+		this->fout << "\tmovq " << temp << " , %rax" << endl;
+		this->fout << "\tmovq " << expr << ", %r10" << endl;
+		this->fout << "\tmovq %r10, (%rax)" << endl;
 	}
 	else
 	{
-		cout << "# ERROR: array " << tabName << " not declared" << endl;
+		this->fout << "# ERROR: array " << tabName << " not declared" << endl;
 		this->setError();
 	}
 
@@ -476,12 +473,12 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 				Element array = Element(this->getVar(varname).index, "int", true);
 				Element eight = Element(8, "int", false);
 				Element index = visit(expressionContext);
-				cout << "\t# access the case and return its value" << endl;
+				this->fout << "\t# access the case and return its value" << endl;
 				Element indexOnBits = this->operationExpression(index, eight, "imull");
-				cout << "\taddq " << indexOnBits << ", %rbp" << endl;
-				cout << "\tmovl -" << array.value << "(%rbp), %eax" << endl;
-				cout << "\tsubq " << indexOnBits << ", %rbp" << endl;
-				cout << "\tmovl %eax, " << temporalVariable << endl;
+				this->fout << "\taddq " << indexOnBits << ", %rbp" << endl;
+				this->fout << "\tmovl -" << array.value << "(%rbp), %eax" << endl;
+				this->fout << "\tsubq " << indexOnBits << ", %rbp" << endl;
+				this->fout << "\tmovl %eax, " << temporalVariable << endl;
 				return temporalVariable;
 			}
 			else
