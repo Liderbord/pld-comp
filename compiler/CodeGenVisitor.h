@@ -69,6 +69,8 @@ public:
 	virtual antlrcpp::Any visitExpressionLess(ifccParser::ExpressionLessContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionGreaterEqual(ifccParser::ExpressionGreaterEqualContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionLessEqual(ifccParser::ExpressionLessEqualContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionNegation(ifccParser::ExpressionNegationContext *ctx) override;
+	virtual antlrcpp::Any visitExpressionNegative(ifccParser::ExpressionNegativeContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionValue(ifccParser::ExpressionValueContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionFn(ifccParser::ExpressionFnContext *ctx) override;
 	virtual antlrcpp::Any visitExpressionPar(ifccParser::ExpressionParContext *ctx) override;
@@ -81,8 +83,8 @@ public:
 	virtual antlrcpp::Any visitDeclaration(ifccParser::DeclarationContext *ctx) override;
 	virtual antlrcpp::Any visitDec(ifccParser::DecContext *ctx) override;
 	virtual antlrcpp::Any visitAffectationExpr(ifccParser::AffectationExprContext *ctx) override;
-	virtual antlrcpp::Any visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx) override ;
-	virtual antlrcpp::Any visitAffectationArray(ifccParser::AffectationArrayContext *ctx) override ;
+	virtual antlrcpp::Any visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx) override;
+	virtual antlrcpp::Any visitAffectationArray(ifccParser::AffectationArrayContext *ctx) override;
 	// Helpers
 	Element getNewTempVariable();
 	Element operationExpression(Element rightval, Element leftval, string operation);
@@ -106,8 +108,8 @@ public:
 	bool getError();
 	void setWarning(bool val);
 	bool getWarning();
-	//int maxOffset;
-
+	string content;		 // temporal string that holds the assembly code of a function's body
+	stringstream fout; // stream to add assembly code to the content of the function
 
 private:
 	int jumps;											 // counter of jumps on assembly code (used to generate unique labels)
