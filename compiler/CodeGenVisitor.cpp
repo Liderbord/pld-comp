@@ -67,7 +67,15 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 	{
 		string varname = varnameContext->getText();
 		string type = ctx->TYPE(counter)->getText();
-		int index = (this->getVars().size() + 1) * 8;
+		// int index = (this->getVars().size() + 1) * 8;
+		// int index = maxOffset + 8;
+		// maxOffset = index;
+
+		int index = this->getMaxOffset() + 8;
+		this->setMaxOffset(index);
+
+		// int index = this->getnewindex
+
 		// if the name of the argument is not repeated, save it in the map
 		if (!this->isVarDeclarated(varname))
 		{
@@ -75,13 +83,13 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 			// if there's less than 7 arguments, save the variable in the standard registers
 			if (counter < 6)
 			{
-				cout << MOVL << ARG_REGS[counter] << ", -" << to_string(index) << RBP << endl;
+				this->fout << MOVL << ARG_REGS[counter] << ", -" << to_string(index) << RBP << endl;
 			}
 		}
 		// if the arguments is repeated, set an error
 		else
 		{
-			cout << "# ERROR: same argument " << varname << " declared multiple times" << endl;
+			this->fout << "# ERROR: same argument " << varname << " declared multiple times" << endl;
 			this->setError();
 		}
 		counter++;
@@ -98,30 +106,25 @@ antlrcpp::Any CodeGenVisitor::visitArgsDef(ifccParser::ArgsDefContext *ctx)
 
 antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 {
+	// STEP 1: visit the tree, feed the stack and get the assembly code
 	string head;
 	string fnName = ctx->VARNAME()->getText();
 	string fnType = ctx->TYPE()->getText();
+	// set the name of the current function and initialize it's data
 	this->setCurrentFunction(fnName, fnType);
+
 // if the machine is from apple, use an _ before the name of the function
 #ifdef __APPLE__
 	head = ".globl	_" + fnName + "\n_" + fnName + ":\n";
 #else
 	head = ".globl	" + fnName + "\n" + fnName + ":\n";
 #endif
-	cout << head << STACK << endl;
-
-	// if there's more than one function and the current function is not the first one
-	// move the RSP by 16 bytes to make space (standard)
-	if (this->functions.size() > 1)
-	{
-		cout << "\tsubq	$16, %rsp" << endl;
-	}
 
 	// visit the arguments of the function, if there are any
 	ifccParser::ArgsDefContext *argsDefContext = ctx->argsDef();
 	if (argsDefContext)
 	{
-		cout << "\t# args" << endl;
+		this->fout << "\t# args" << endl;
 		visit(argsDefContext);
 	}
 
@@ -129,46 +132,65 @@ antlrcpp::Any CodeGenVisitor::visitFn(ifccParser::FnContext *ctx)
 	ifccParser::ContentContext *contentContext = ctx->content();
 	if (contentContext)
 	{
-		cout << "\t# content" << endl;
+		this->fout << "\t# content" << endl;
 		visit(contentContext);
-		// if no body, return xorl %eax (good practice from gcc)
 	}
+	// if no body, return xorl %eax (good practice from gcc)
 	else
 	{
-		cout << "\txorl	%eax, %eax" << endl;
+		this->fout << "\txorl	%eax, %eax" << endl;
 	}
 
-	// if we moved the RSP at the beggining of the function, move it back
-	if (this->functions.size() > 1)
-	{
-		cout << "\taddq	$16, %rsp" << endl;
-	}
+	// define the amount of stack data used by the function (vars including arrays)
+	int stackSize = (this->getVars().size() + 1) * 8;
 
+	// STEP 2: print the assembly code of the current function
+	// print the standard head of the function
+	cout << head << STACK << endl;
+
+	// we move the RSP to protect the stack of the current function
+	cout << "\tsubq	$" << stackSize << ", %rsp" << endl;
+
+	// print the assembly code of the function's body (statements)
+	cout << this->fout.str() << endl;
+
+	// we move back the RSP at the beggining of the function
+	cout << "\taddq	$" << stackSize << ", %rsp" << endl;
+
+	// print the standard footer of the function
 	cout << END << endl;
 	return 0;
 }
 
 /**
  * @brief visit all the statements of the function, starting with the first one
+ * 				and return 1 if there's a return inside or 0 otherwise
  *
  * @param ifccParser::ContentContext ctx
- * @return antlrcpp::Any
+ * @return antlrcpp::Any (int)
  */
 
 antlrcpp::Any CodeGenVisitor::visitContent(ifccParser::ContentContext *ctx)
 {
+	// if the statement is a return, we don't need to progress further in the recursion
+	// and we can just set the assembly code of the return
+	// we return 1 to indicate that inside this content there's a return
 	ifccParser::ReturnValueContext *returnValueContext = ctx->returnValue();
 	if (returnValueContext)
 	{
 		visit(returnValueContext);
 		return 1;
 	}
+	// if there's no return, we progress further in the recursion
+	// we return 0 to indicate that inside this content there's no return
 	else
 	{
+		// if there's more content, we return it's result
 		if (ctx->content())
 		{
 			return visitChildren(ctx);
 		}
+		// if there is not more content, we return 0 to indicate no return
 		else
 		{
 			visitChildren(ctx);
@@ -199,14 +221,14 @@ antlrcpp::Any CodeGenVisitor::visitReturnValue(ifccParser::ReturnValueContext *c
 	{
 		// save the value in the register EAX
 		// set EAX as the return value
-		cout << "\t# return " << element << endl;
-		cout << "\t"
-				 << "movl " << element << ", %eax" << endl;
+		this->fout << "\t# return " << element << endl;
+		this->fout << "\t"
+							 << "movl " << element << ", %eax" << endl;
 	}
 	// if the element is not the same type as the function's return type, set an error
 	else
 	{
-		cout << "# ERROR: return type mismatch" << endl;
+		this->fout << "# ERROR: return type mismatch" << endl;
 		this->setError();
 	}
 	return 0;
@@ -229,7 +251,11 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 	for (auto pair : vectorVars)
 	{
 		string varname = pair.first;
-		int index = (this->getVars().size() + 1) * 8;
+
+		// get a index to allocate the variable in the stack
+		int index = this->getMaxOffset() + 8;
+		this->setMaxOffset(index);
+
 		// if varname doesn't exists in the stack (vars), save it
 		if (!this->isVarDeclarated(varname))
 		{
@@ -238,13 +264,13 @@ antlrcpp::Any CodeGenVisitor::visitInit(ifccParser::InitContext *ctx)
 			// if there's an expression (initial value), visit the expression and set it to the variable
 			// if there's no expression, set the variable to the default value
 			string value = pair.second ? visit(pair.second).as<Element>().getValue() : "$0";
-			cout << "\t# declare " << type << " and assign " << value << endl;
-			cout << "\t" + getMove(type) + " " + value + ", " << getRegister(type) << endl;
-			cout << "\t" + getMove(type) + " " + getRegister(type) + ", -" + to_string(index) + "(%rbp)" << endl;
+			this->fout << "\t# declare " << type << " and assign " << value << endl;
+			this->fout << "\t" + getMove(type) + " " + value + ", " << getRegister(type) << endl;
+			this->fout << "\t" + getMove(type) + " " + getRegister(type) + ", -" + to_string(index) + "(%rbp)" << endl;
 		}
 		else
 		{
-			cout << "# ERROR: variable " << varname << " already declared" << endl;
+			this->fout << "# ERROR: variable " << varname << " already declared" << endl;
 			this->setError();
 		}
 	}
@@ -310,15 +336,100 @@ antlrcpp::Any CodeGenVisitor::visitAffectationExpr(ifccParser::AffectationExprCo
 		this->setVarUsed(varname);
 		// set the direct assignment
 		Variable var = this->getVar(varname);
-		cout << "\t# assigning " << element << " to " << varname << endl;
-		cout << "\t" + this->getMove(var.type) << " " << element << ", " << this->getRegister(var.type) << endl;
-		cout << "\t" + this->getMove(var.type) << " " << this->getRegister(var.type) << ", -" << to_string(var.index) << RBP << endl;
+		this->fout << "\t# assigning " << element << " to " << varname << endl;
+		this->fout << "\t" + this->getMove(var.type) << " " << element << ", " << this->getRegister(var.type) << endl;
+		this->fout << "\t" + this->getMove(var.type) << " " << this->getRegister(var.type) << ", -" << to_string(var.index) << RBP << endl;
 	}
 	else
 	{
-		cout << "# ERROR: variable " << varname << " not declared" << endl;
+		this->fout << "# ERROR: variable " << varname << " not declared" << endl;
 		this->setError();
 	}
+	return 0;
+}
+
+/**
+ * @brief used to declare an array, put it in vars and generate assembly code in case of affect
+ *
+ * @param ctx ArrayDeclarationContext *ctx
+ * @return antlrcpp::Any
+ */
+
+antlrcpp::Any CodeGenVisitor::visitArrayDeclaration(ifccParser::ArrayDeclarationContext *ctx)
+{
+
+	// we assume that type is INT for now
+	string type = ctx->TYPE()->getText();
+	// getting the name of the array, CONST is a non-terminal symbol, so no visit
+	string tabName = ctx->VARNAME()->getText();
+	// getting its length, which is in CONST()[0]
+	int length = stoi(ctx->CONST(0)->getText());
+	// getting the number of declared values
+	int nbrValues = ctx->CONST().size() - 1;
+
+	// check that lengths are coherent
+	if (length >= nbrValues)
+	{
+
+		// pushing tabName in vars, it points the last case of the stack so far (=first elt of the array)
+		int index = this->getMaxOffset() + length * 8;
+		this->setMaxOffset(index);
+		this->setVar(tabName, index, type);
+
+		for (int i = 1; i <= nbrValues; i++)
+		{
+			// arrayVal.push_back(atoi(ctx->CONST(i)->getText()));
+			string value = ctx->CONST(i)->getText();
+			// moving the values to the stack
+			this->fout << "\t# moving " << value << " to its location in the stack" << endl;
+			this->fout << "\tmovl $" << value << ", -" << to_string(index - (i - 1) * 8) << "(%rbp)" << endl;
+		}
+	}
+	else
+	{
+		this->fout << "# ERROR: array " << tabName << " has a length of " << length << " but only " << nbrValues << " values are declared" << endl;
+		this->setError();
+	}
+	return 0;
+}
+
+/**
+ * @brief get the adress of the destination case of the array, and put the value in it
+ *
+ * @param ctx AffectationArrayContext *ctx
+ * @return antlrcpp::Any
+ */
+
+antlrcpp::Any CodeGenVisitor::visitAffectationArray(ifccParser::AffectationArrayContext *ctx)
+{
+	string tabName = ctx->VARNAME()->getText();
+
+	// check if the table has already been declared
+	if (this->isVarDeclarated(tabName))
+	{
+		// getting the variable/const by using the Value visitor
+		Element elementIndex = visit(ctx->expression(0));
+		Element newValue = visit(ctx->expression(1));
+		Element eight = Element(8, "int", false);
+
+		// get the destination index of the array (the first element of the array)
+		Variable var = this->getVar(tabName);
+		Element arrayFirstElement = Element(-var.index, "int", false);
+
+		// calculate the the index  0, 1, 2... multiplied by 8, to get the offset of the array
+		Element offset = this->operationExpression(elementIndex, eight, "imull");
+		// calculate the exact address of the element in the array (indexFirstElement + offset)
+		Element element = this->operationExpression(arrayFirstElement, offset, "addl");
+		// set assembly code of the affectation
+		this->fout << "\t# affect expression to lvalue (case of array)" << endl;
+		this->fout << "\tmovq " << newValue << ", " << element.value << "(%rbp)" << endl;
+	}
+	else
+	{
+		this->fout << "# ERROR: array " << tabName << " not declared" << endl;
+		this->setError();
+	}
+
 	return 0;
 }
 
@@ -334,6 +445,7 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 {
 	string returnval;
 	antlr4::tree::TerminalNode *varnameNode = ctx->VARNAME();
+	ifccParser::ExpressionContext *expressionContext = ctx->expression();
 	antlr4::tree::TerminalNode *charNode = ctx->CHAR();
 	antlr4::tree::TerminalNode *constNode = ctx->CONST();
 	// if the value is a varname, get the register index from
@@ -345,12 +457,31 @@ antlrcpp::Any CodeGenVisitor::visitValue(ifccParser::ValueContext *ctx)
 		// if variable is declared, return it
 		if (this->isVarDeclarated(varname))
 		{
-			return Element(this->getVar(varname).index, this->getVar(varname).type, true);
+			// if there's an expression, means that we're in the case of an array
+			if (expressionContext)
+			{
+				// get the content of the storage in the index selected of the array
+				Element temporalVariable = getNewTempVariable();
+				Element array = Element(this->getVar(varname).index, "int", true);
+				Element eight = Element(8, "int", false);
+				Element index = visit(expressionContext);
+				this->fout << "\t# access the case and return its value" << endl;
+				Element indexOnBits = this->operationExpression(index, eight, "imull");
+				this->fout << "\taddq " << indexOnBits << ", %rbp" << endl;
+				this->fout << "\tmovl -" << array.value << "(%rbp), %eax" << endl;
+				this->fout << "\tsubq " << indexOnBits << ", %rbp" << endl;
+				this->fout << "\tmovl %eax, " << temporalVariable << endl;
+				return temporalVariable;
+			}
+			else
+			{
+				return Element(this->getVar(varname).index, this->getVar(varname).type, true);
+			}
 		}
 		// if variable is not declared, throw an error
 		else
 		{
-			cout << "# ERROR: variable " << varname << " not declared" << endl;
+			this->fout << "# ERROR: variable " << varname << " not declared" << endl;
 			this->setError();
 			return 1;
 		}
@@ -385,15 +516,15 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 	// get a new jump label to finish the if
 	string jumpEndIf = this->getJumpLabel();
 	// set the condition in assembly code
-	cout << MOVL << expval << ", " << EAX << endl;
-	cout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
+	this->fout << MOVL << expval << ", " << EAX << endl;
+	this->fout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
 	// if there's a else's content
 	if (elseContentContext)
 	{
 		// get a new jump label to omit the if content and pass directly to else
 		string jumpElse = this->getJumpLabel();
 		// set the jump condition in assembly code (if condition is 0, jump to else)
-		cout << "\tje " << jumpElse << endl;
+		this->fout << "\tje " << jumpElse << endl;
 		// set the if's content
 		ifccParser::ContentContext *contentContext = ctx->content(0);
 		if (contentContext)
@@ -401,19 +532,19 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 			visit(contentContext);
 		}
 		// set the jump to the end of the if
-		cout << "\tjmp " << jumpEndIf << endl;
+		this->fout << "\tjmp " << jumpEndIf << endl;
 		// set the jump label of the else
-		cout << jumpElse << ":" << endl;
+		this->fout << jumpElse << ":" << endl;
 		// set the else's content
 		visit(elseContentContext);
 		// set the jump to the end of the if
-		cout << "\tjmp " << jumpEndIf << endl;
+		this->fout << "\tjmp " << jumpEndIf << endl;
 	}
 	// if there isn't else's content
 	else
 	{
 		// set the jump condition in assembly code (if condition is 0, jump to the end)
-		cout << "\tje " << jumpEndIf << endl;
+		this->fout << "\tje " << jumpEndIf << endl;
 		// set the if content in assembly code
 		ifccParser::ContentContext *contentContext = ctx->content(0);
 		if (contentContext)
@@ -421,10 +552,10 @@ antlrcpp::Any CodeGenVisitor::visitIfElse(ifccParser::IfElseContext *ctx)
 			visit(ctx->content(0));
 		}
 		// set the jump to the end of the if
-		cout << "\tjmp " << jumpEndIf << endl;
+		this->fout << "\tjmp " << jumpEndIf << endl;
 	}
 	// set the jump label of the if's end
-	cout << jumpEndIf << ":" << endl;
+	this->fout << jumpEndIf << ":" << endl;
 	return 0;
 }
 
@@ -442,34 +573,34 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 	// get a new jump label to finish the while
 	string jumpEnd = this->getJumpLabel();
 	// set the jump label of the condition
-	cout << jumpCondition << ":" << endl;
+	this->fout << jumpCondition << ":" << endl;
 	// get the condition (var/const) of the while
 	Element element = visit(ctx->expression());
 	// set the condition in assembly code
 	// if the condition is a var, compare it directly
 	if (element.var)
 	{
-		cout << "\tcmpl $0, " << element << endl; // we're comparing the result with 0
+		this->fout << "\tcmpl $0, " << element << endl; // we're comparing the result with 0
 	}
 	// if the condition is a const, put it on EAX and compare it
 	else
 	{
-		cout << MOVL << element << ", " << EAX << endl;
-		cout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
+		this->fout << MOVL << element << ", " << EAX << endl;
+		this->fout << "\tcmpl $0, " << EAX << endl; // we're comparing the result with 0
 	}
 	// set the jump condition in assembly code (if condition is 0, jump to the end)
-	cout << "\tje " << jumpEnd << endl;
+	this->fout << "\tje " << jumpEnd << endl;
 	// set the while's content
 	int returned = visit(ctx->content());
-	cout << "# RETURNED " << returned << endl;
+	this->fout << "# RETURNED " << returned << endl;
 	// if the content doesn't contain a return statement, set the jump to the condition
 	if (returned == 0)
 	{
 		// set the jump to the condition
-		cout << "\tjmp " << jumpCondition << endl;
+		this->fout << "\tjmp " << jumpCondition << endl;
 	}
 	// set the jump label of the while's end
-	cout << jumpEnd << ":" << endl;
+	this->fout << jumpEnd << ":" << endl;
 	return 0;
 }
 
@@ -483,11 +614,16 @@ antlrcpp::Any CodeGenVisitor::visitWhileDo(ifccParser::WhileDoContext *ctx)
 
 Element CodeGenVisitor::getNewTempVariable()
 {
-	int index = (this->getVars().size() + 1) * 8;
+	// get a memory address for the new variable
+	int index = this->getMaxOffset() + 8;
+	// save new index as the top of the stack for the current function
+	this->setMaxOffset(index);
+	// save the index in the compilator stack of the current function
 	string indexString = to_string(index);
-	string varname = "temp" + indexString;
+	string varname = "temp" + indexString; // name compose of temp + index, ex: temp0
 	this->setVar(varname, index, "int");
 	this->setVarUsed(varname);
+	// return the variable as an Element (variable/const)
 	return Element(index, "int", true);
 }
 
@@ -538,39 +674,39 @@ Element CodeGenVisitor::operationExpression(Element leftval, Element rightval, s
 		{
 			result = leftval.value ^ rightval.value;
 		}
-		cout << "\t# result: " << result << endl;
+		this->fout << "\t# result: " << result << endl;
 		return Element(result, "int", false);
 	}
 	// if one element is a variable, execute the operation on assembly
 	else
 	{
 		Element temporalVariable = getNewTempVariable();
-		cout << MOVL << leftval << ", " << EAX << endl;
+		this->fout << MOVL << leftval << ", " << EAX << endl;
 		if (operation == "idiv")
 		{
-			cout << "\tcltd" << endl;
-			cout << "\tmovl " << rightval << ", " << ECX << endl;
-			cout << "\tidivl " << ECX << endl;
+			this->fout << "\tcltd" << endl;
+			this->fout << "\tmovl " << rightval << ", " << ECX << endl;
+			this->fout << "\tidivl " << ECX << endl;
 		}
 		else if (operation == "mod")
 		{
-			cout << "\tcltd" << endl;
+			this->fout << "\tcltd" << endl;
 			if (rightval.var)
 			{
-				cout << "\tidivl " << rightval << endl;
+				this->fout << "\tidivl " << rightval << endl;
 			}
 			else
 			{
-				cout << "\tmovl " << rightval << ", " << ECX << endl;
-				cout << "\tidivl " << ECX << endl;
+				this->fout << "\tmovl " << rightval << ", " << ECX << endl;
+				this->fout << "\tidivl " << ECX << endl;
 			}
-			cout << "\tmovl " << EDX << ", " << EAX << endl;
+			this->fout << "\tmovl " << EDX << ", " << EAX << endl;
 		}
 		else
 		{
-			cout << "\t" << operation << " " << rightval << ", " << EAX << endl;
+			this->fout << "\t" << operation << " " << rightval << ", " << EAX << endl;
 		}
-		cout << MOVL << EAX << ", " << temporalVariable << endl;
+		this->fout << MOVL << EAX << ", " << temporalVariable << endl;
 		return temporalVariable;
 	}
 }
@@ -590,17 +726,17 @@ antlrcpp::Any CodeGenVisitor::visitExpressionMultDivMod(ifccParser::ExpressionMu
 	string operation = ctx->MULTDIVMOD()->getText();
 	if (operation == "*")
 	{
-		cout << "\t# do " << leftval << " * " << rightval << endl;
+		this->fout << "\t# do " << leftval << " * " << rightval << endl;
 		return operationExpression(leftval, rightval, "imull");
 	}
 	else if (operation == "/")
 	{
-		cout << "\t# do " << leftval << " / " << rightval << endl;
+		this->fout << "\t# do " << leftval << " / " << rightval << endl;
 		return operationExpression(leftval, rightval, "idiv");
 	}
 	else
 	{
-		cout << "\t# do " << leftval << " % " << rightval << endl;
+		this->fout << "\t# do " << leftval << " % " << rightval << endl;
 		return operationExpression(leftval, rightval, "mod");
 	}
 }
@@ -617,15 +753,15 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAddSub(ifccParser::ExpressionAddSub
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	string operation = ctx->ADDSUB()->getText();
+	string operation = ctx->ADDSUB->getText();
 	if (operation == "+")
 	{
-		cout << "\t# do " << leftval << " + " << rightval << endl;
+		this->fout << "\t# do " << leftval << " + " << rightval << endl;
 		return operationExpression(leftval, rightval, "add");
 	}
 	else
 	{
-		cout << "\t# do " << leftval << " - " << rightval << endl;
+		this->fout << "\t# do " << leftval << " - " << rightval << endl;
 		return operationExpression(leftval, rightval, "sub");
 	}
 }
@@ -642,7 +778,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionAnd(ifccParser::ExpressionAndContex
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " - " << rightval << endl;
+	this->fout << "\t# do " << leftval << " - " << rightval << endl;
 	return operationExpression(leftval, rightval, "and");
 }
 
@@ -658,7 +794,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionOr(ifccParser::ExpressionOrContext 
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " | " << rightval << endl;
+	this->fout << "\t# do " << leftval << " | " << rightval << endl;
 	return operationExpression(leftval, rightval, "or");
 }
 
@@ -673,7 +809,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionXor(ifccParser::ExpressionXorContex
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " ^ " << rightval << endl;
+	this->fout << "\t# do " << leftval << " ^ " << rightval << endl;
 	return operationExpression(leftval, rightval, "xor");
 }
 
@@ -717,19 +853,19 @@ Element CodeGenVisitor::operationCompExpression(Element leftval, Element rightva
 		{
 			result = leftval.value <= rightval.value;
 		}
-		cout << "\t# result: " << result << endl;
+		this->fout << "\t# result: " << result << endl;
 		return Element(result, "int", false);
 	}
 	// if one element is a variable, execute the comparation on assembly
 	else
 	{
 		Element temporalVariable = getNewTempVariable();
-		cout << MOVL << leftval << ", " << EAX << endl;
-		cout << "\tcmpl " << rightval << ", " << EAX << endl;
-		cout << "\tset" << comp << " %al" << endl;
-		cout << "\tandb	$1, %al" << endl;
-		cout << "\tmovzbl	%al, %eax" << endl;
-		cout << "\tmovl	%eax, " << temporalVariable << endl;
+		this->fout << MOVL << leftval << ", " << EAX << endl;
+		this->fout << "\tcmpl " << rightval << ", " << EAX << endl;
+		this->fout << "\tset" << comp << " %al" << endl;
+		this->fout << "\tandb	$1, %al" << endl;
+		this->fout << "\tmovzbl	%al, %eax" << endl;
+		this->fout << "\tmovl	%eax, " << temporalVariable << endl;
 		return temporalVariable;
 	}
 }
@@ -745,7 +881,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionEqual(ifccParser::ExpressionEqualCo
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " == " << rightval << endl;
+	this->fout << "\t# do " << leftval << " == " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "e");
 }
 
@@ -760,7 +896,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionNotEqual(ifccParser::ExpressionNotE
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " != " << rightval << endl;
+	this->fout << "\t# do " << leftval << " != " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "ne");
 }
 
@@ -775,7 +911,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionGreater(ifccParser::ExpressionGreat
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " > " << rightval << endl;
+	this->fout << "\t# do " << leftval << " > " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "g");
 }
 
@@ -790,7 +926,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLess(ifccParser::ExpressionLessCont
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " < " << rightval << endl;
+	this->fout << "\t# do " << leftval << " < " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "l");
 }
 
@@ -805,7 +941,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionGreaterEqual(ifccParser::Expression
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " >= " << rightval << endl;
+	this->fout << "\t# do " << leftval << " >= " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "ge");
 }
 
@@ -820,8 +956,48 @@ antlrcpp::Any CodeGenVisitor::visitExpressionLessEqual(ifccParser::ExpressionLes
 {
 	Element leftval = visit(ctx->expression(0));
 	Element rightval = visit(ctx->expression(1));
-	cout << "\t# do " << leftval << " <= " << rightval << endl;
+	this->fout << "\t# do " << leftval << " <= " << rightval << endl;
 	return operationCompExpression(leftval, rightval, "le");
+}
+
+/**
+ * @brief set the operation negation (!) of a expression
+ *
+ * @param ifccParser::ExpressionNegationContext ctx
+ * @return Element (variable or const)
+ */
+
+antlrcpp::Any CodeGenVisitor::visitExpressionNegation(ifccParser::ExpressionNegationContext *ctx)
+{
+	Element element = visit(ctx->expression());
+	Element temporalVariable = getNewTempVariable();
+	this->fout << "\t# do ! " << element << endl;
+	this->fout << MOVL << element << ", " << EAX << endl;
+	this->fout << "cmpl $0, " << EAX << endl;
+	this->fout << "\tsetne %al" << endl;
+	this->fout << "\txorb $-1, %al" << endl;
+	this->fout << "\tandb $1, %al" << endl;
+	this->fout << "\tmovzbl %al, %eax" << endl;
+	this->fout << "\tmovl %eax, " << temporalVariable << endl;
+	return temporalVariable;
+}
+
+/**
+ * @brief set the operation negative (-) of a expression
+ *
+ * @param ifccParser::ExpressionNegativeContext ctx
+ * @return Element (variable or const)
+ */
+
+antlrcpp::Any CodeGenVisitor::visitExpressionNegative(ifccParser::ExpressionNegativeContext *ctx)
+{
+	Element element = visit(ctx->expression());
+	Element temporalVariable = getNewTempVariable();
+	this->fout << "\t# do - " << element << endl;
+	this->fout << "\txorl %eax, %eax" << endl;
+	this->fout << "\tsubl " << element << ", %eax" << endl;
+	this->fout << MOVL << "%eax, " << temporalVariable << endl;
+	return temporalVariable;
 }
 
 /**
@@ -841,7 +1017,7 @@ antlrcpp::Any CodeGenVisitor::visitArgs(ifccParser::ArgsContext *ctx)
 		// if there's less than 7 arguments, save the variable in the standard registers
 		if (counter < 6)
 		{
-			cout << MOVL << argument << ", " << ARG_REGS[counter] << endl;
+			this->fout << MOVL << argument << ", " << ARG_REGS[counter] << endl;
 		}
 		counter++;
 	}
@@ -860,7 +1036,7 @@ antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext 
 {
 	visit(ctx->fnCall());
 	Element temporalVariable = getNewTempVariable();
-	cout << MOVL << EAX << ", " << temporalVariable << endl;
+	this->fout << MOVL << EAX << ", " << temporalVariable << endl;
 	return temporalVariable;
 }
 
@@ -872,19 +1048,21 @@ antlrcpp::Any CodeGenVisitor::visitExpressionFn(ifccParser::ExpressionFnContext 
 
 antlrcpp::Any CodeGenVisitor::visitFnCall(ifccParser::FnCallContext *ctx)
 {
+	// visit all the arguments and assign them to the EDI registers (6 max)
 	ifccParser::ArgsContext *argsContext = ctx->args();
 	if (argsContext)
 	{
 		visit(argsContext);
 	}
+	// call the selected function
 	string fnName = ctx->VARNAME()->getText();
 	string call;
 #ifdef __APPLE__
 	call = "\tcallq	_" + fnName;
 #else
-	call = "\tcallq	_" + fnName;
+	call = "\tcallq	" + fnName;
 #endif
-	cout << call << endl;
+	this->fout << call << endl;
 	return 0;
 }
 
@@ -972,6 +1150,8 @@ void CodeGenVisitor::setCurrentFunction(string name, string type)
 	Function function;
 	function.type = type;
 	function.vars = {};
+	this->content = "";
+	this->fout.str("");
 	this->functions[name] = function;
 	this->currentFunction = name;
 }
@@ -985,6 +1165,28 @@ void CodeGenVisitor::setCurrentFunction(string name, string type)
 string CodeGenVisitor::getCurrentFunctionType()
 {
 	return this->functions[this->currentFunction].type;
+}
+
+/**
+ * @brief get the current max offset of the function
+ *
+ * @return int
+ */
+
+int CodeGenVisitor::getMaxOffset()
+{
+	return this->functions[this->currentFunction].maxOffset;
+}
+
+/**
+ * @brief set the current max offset of the function
+ *
+ * @param value
+ */
+
+void CodeGenVisitor::setMaxOffset(int value)
+{
+	this->functions[this->currentFunction].maxOffset = value;
 }
 
 /**

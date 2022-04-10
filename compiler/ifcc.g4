@@ -4,18 +4,24 @@ axiom: prog;
 
 prog: fn+ EOF;
 fn: TYPE VARNAME '(' argsDef? ')' '{' content? '}';
-content: (init | affectation ';' | ifElse | whileDo | returnValue ';' | fnCall ';') content?;
-value: CONST | VARNAME | CHAR;
+content: (init | arrayDec | affectation ';' | ifElse | whileDo | returnValue ';' | fnCall ';') content?;
+value: CONST | VARNAME | CHAR | VARNAME '[' expression ']';
 returnValue: 'return' expression;
 init: TYPE declaration; 
 declaration: dec (',' dec)* ';' ; 
 dec: VARNAME ('=' expression)? ;
-affectation: VARNAME '=' expression # affectationExpr;
+
+arrayDec: TYPE VARNAME '['CONST']'  ('=' '{' CONST (',' CONST)* '}' )?  ';' #arrayDeclaration ;
+
+
+affectation: VARNAME '=' expression # affectationExpr
+	| VARNAME '[' expression ']' '=' expression #affectationArray;
+
 expression:
 	expression MULTDIVMOD expression # expressionMultDivMod
-	| expression ADDSUB expression # expressionAddSub
-	| expression ('&=' | '&&') expression # expressionAnd
-	| expression ('|=' | '||') expression # expressionOr
+	| expression ADDSUB=('+' | '-') expression # expressionAddSub
+	| expression ('&' | '&&') expression # expressionAnd
+	| expression ('|' | '||') expression # expressionOr
 	| expression '^' expression # expressionXor
 	| expression '==' expression # expressionEqual
 	| expression '!=' expression # expressionNotEqual
@@ -23,6 +29,8 @@ expression:
 	| expression '<' expression # expressionLess
 	| expression '>=' expression # expressionGreaterEqual
 	| expression '<=' expression # expressionLessEqual
+	| '!' expression # expressionNegation
+	| '-' expression # expressionNegative
 	| '(' expression ')' # expressionPar
 	| fnCall # expressionFn
 	| value # expressionValue;
@@ -37,7 +45,6 @@ ONELINECOMMENT: '//' .*? '\n' -> skip;
 DIRECTIVE: '#' .*? '\n' -> skip;
 WS: [ \t\r\n] -> channel(HIDDEN);
 CONST: [0-9]+;
-ADDSUB: '+' | '-';
 MULTDIVMOD: '*' | '/' | '%';
 CHAR: '\'' .? '\'';
 REF: '&';
