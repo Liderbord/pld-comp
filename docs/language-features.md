@@ -1,8 +1,25 @@
-on peut pas faire de else if car les accolades sont forcées
+# 💬 Language features
 
-if else marche apr conre
+## Basic features
 
-# Language features
+Declaration and affectation work, all the lines below are valid syntax.
+```c
+    char a;
+    a = 0;
+    char b = 1;
+    char c = 2, d = 3;
+```
+- If a variable is declared twice, it will throw an error
+- If a variable is declared but never used a warning will be given as a comment in the assembly code
+- If a value is assigned to an undeclared variable, the compiler will throw an error.
+- Invalid types also throw an error.
+
+For more declaration support check out the [`var_decl` test suite](/tests/testfiles/var_decl/).
+
+## Operations
+Operations of all kind are supported, if you would like to know their priorities and the supported operations please refer to the [grammar documentation](/docs/grammar.md).
+
+For more declaration support check out the [`operations` test suite](/tests/testfiles/operations/).
 
 ## If and else
 - If statements work
@@ -13,6 +30,12 @@ if else marche apr conre
 - As per the grammar, curly brackets **must** be used with `if` and `else` statements.
 - `else if`statements are now not supportated because we enforce the curly brackets.
 
+If you desire to test the if/else functionalities check out the [`if` test suite](/tests/testfiles/if/)
+
+## While 
+
+While loops are supported but there are some limitations:
+- You can have a maximum of 6 inputs.
 ## Characters
 
 - `char` type is supported
@@ -26,4 +49,7 @@ if else marche apr conre
     return b;
 ```
 
-- 
+If you desire to test the char functionalities check out the [`char` test suite](/tests/testfiles/char/)
+
+## Functions
+
