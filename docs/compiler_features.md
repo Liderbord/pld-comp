@@ -1,15 +1,18 @@
+# Compiler features
 
-Feature 1: Vérification qu’une variable utilisée dans une expression a été déclarée.
+These features are related to the code the developer is writing but rather how the compiler can compile better code, or assist the developer in finding the errors in their code.
 
-  Si la variable n'a pas été déclarée, la méthode  visitAffectExpr retournera un cout d'error: "# ERROR: variable ... is not declared"
+## Verification of the declaration of an used variable.
+
+If a variable is not declared, the visitAffectExpr method returns the cout error message : "# ERROR: variable ... is not declared"
   
-Feature 2: Vérification qu’une variable déclarée est utilisée au moins une fois.
+## Verification that a declared variable is used at least once.
 
-  Si la variable est utilisée, on met le nom de la variable en paramètre de la méthode setVarUsed (qui se trouve dans visitAffectExpr)  qui sauvegarde toutes les variables utilisées.
-  Ainsi lorsque l'on regardera si une variable est utilisée, si son nom n'est pas dans les variables utilisées alors un warning sera activé.
+If the variable is used, we put the variables name in the parameters of setVarUsed method (which is in visitAffectExpr), which saves all the used variables.
+Thereby, when we look if a variable is used, if its name isn't in the used variables, a warning is activated.
   
-Feature 3: Vérification qu’une variable n’est pas déclarée plusieurs fois
+## Verification that a variable isn't declared several times.
 
-  Lorsque l'on déclare une nouvelle variable, on inscrit son nom dans une map. De plus on vérifie que la variable n'existe pas déjà dans cette map à l'aide d'un if.
-  Cela permet ainsi de nous empêcher de déclarer plusieurs fois une variable.
-  Si jamais une variable est déclarée plusieurs fois, alors on a un code d'erreur: "# ERROR: variable ... is not declared"
+When we declare a new variable, we write its name in a map. Moreover we verify that the variable is not already existing in the map thanks to an if.
+This allow us to avoid multiple declaration of a variable.
+If a variable is declared more than once, we get this error message : "# ERROR: variable ... is not declared"

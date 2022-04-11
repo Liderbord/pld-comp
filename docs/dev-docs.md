@@ -49,7 +49,7 @@ More information about ifcc.g4 and the grammar [here](./grammar.md).
 
 ## Language Features
 
-All language features can be found in the dedicated section for [language features]()
+All language features can be found in the dedicated section for [language features](./language-features.md)
 
 ## Compiler Features 
 All compiler Features can be found in the dedicated compiler features section

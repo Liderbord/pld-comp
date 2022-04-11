@@ -1,13 +1,31 @@
-on peut pas faire de else if car les accolades sont forcées
-
-if else marche apr conre
-
 # Language features
+
+Language features are teh features of the C programming language that are implemented in our compiler. Some features are limited however, and not fully implemented so please read in detail to better understand what you can and what you cannot do.
+
+## 1. Declaration and affectation
+- Declaration: `int foo;`
+- Multiple declaration: `int foo, bar;`
+- Declaration and assignment: `int foo = 3;`
+- Multiple declaration and assignment: `int foo = 3, bar = 42;`
+- Assignment / affectation: `foo = 2`, `foo = otherVar` 
+
+All of these features are supported with the `char` type as well, more about that in the [char section](#characters).
+
+## Operations
+
+We support a wide variety of operations:
+- Arithmetic operations `+`, `-`, `*` and `/` 
+- Boolean operators: `==`, `!=`, >, `<`, `>=`, `<=`, `||` and `&&`
+- Brackets `(` and `)` are used to enforce priorities
+- It is possible to add chars and ints
+
+## While loops
 
 ## If and else
 - If statements work
 - Nested `if` statement work
 - `else` statements work
+- It is possible to put any expression in the if statement, even a function
 
 ### Notes
 - As per the grammar, curly brackets **must** be used with `if` and `else` statements.
@@ -25,5 +43,16 @@ if else marche apr conre
     char b = a + c;
     return b;
 ```
+- If an int is assigned to a char it will be casted as a char
+- Same goes for char to int
 
-- 
+#### Notes
+
+- We discovered an issue in which characters that contain more than once symbol are considered as valid. As per our grammar and code visitor, they are not considered as valid : `char a = 'ab';` is recognized as valid C code by gcc, but not our compiler.
+
+## 5. Arrays
+
+- Declaration : `int tab[2];`
+- Declaration & Init : `int tab[2] = {1, 2}`
+- Affectation, either for a constant or a variable : `int a = tab[1]; or int a = tab[i];`
+- Return : `return tab[1];`
