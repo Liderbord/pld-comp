@@ -11,6 +11,12 @@ Language features are teh features of the C programming language that are implem
 
 All of these features are supported with the `char` type as well, more about that in the [char section](#characters).
 
+- If a variable is declared twice, it will throw an error
+- If a variable is declared but never used a warning will be given as a comment in the assembly code
+- If a value is assigned to an undeclared variable, the compiler will throw an error.
+- Invalid types also throw an error.
+
+For more declaration support check out the [`var_decl` test suite](/tests/testfiles/var_decl/).
 ## Operations
 
 We support a wide variety of operations:
@@ -18,6 +24,10 @@ We support a wide variety of operations:
 - Boolean operators: `==`, `!=`, >, `<`, `>=`, `<=`, `||` and `&&`
 - Brackets `(` and `)` are used to enforce priorities
 - It is possible to add chars and ints
+
+Operations of all kind are supported, if you would like to know their priorities and the supported operations please refer to the [grammar documentation](/docs/grammar.md).
+
+For more declaration support check out the [`operations` test suite](/tests/testfiles/operations/).
 
 ## While loops
 
@@ -31,6 +41,12 @@ We support a wide variety of operations:
 - As per the grammar, curly brackets **must** be used with `if` and `else` statements.
 - `else if`statements are now not supportated because we enforce the curly brackets.
 
+If you desire to test the if/else functionalities check out the [`if` test suite](/tests/testfiles/if/)
+
+## While 
+
+While loops are supported but there are some limitations:
+- You can have a maximum of 6 inputs.
 ## Characters
 
 - `char` type is supported
@@ -56,3 +72,7 @@ We support a wide variety of operations:
 - Declaration & Init : `int tab[2] = {1, 2}`
 - Affectation, either for a constant or a variable : `int a = tab[1]; or int a = tab[i];`
 - Return : `return tab[1];`
+If you desire to test the char functionalities check out the [`char` test suite](/tests/testfiles/char/)
+
+## Functions
+

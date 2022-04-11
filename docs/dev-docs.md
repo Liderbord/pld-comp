@@ -1,8 +1,8 @@
-# Developer documentation
+# 🏗️ Developer documentation
 
-## Overview of the project sturcture
+## Overview of the project structure
 
-You can find below the strucutre og the main elements of the project.
+You can find below the structure of the main elements of the project.
 
 ```
 pld-comp/
