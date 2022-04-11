@@ -2,7 +2,7 @@
 
 Language features are teh features of the C programming language that are implemented in our compiler. Some features are limited however, and not fully implemented so please read in detail to better understand what you can and what you cannot do.
 
-## 1. Declaration and affectation
+## Declaration and affectation
 - Declaration: `int foo;`
 - Multiple declaration: `int foo, bar;`
 - Declaration and assignment: `int foo = 3;`
@@ -17,10 +17,11 @@ All of these features are supported with the `char` type as well, more about tha
 - Invalid types also throw an error.
 
 For more declaration support check out the [`var_decl` test suite](/tests/testfiles/var_decl/).
+
 ## Operations
 
 We support a wide variety of operations:
-- Arithmetic operations `+`, `-`, `*` and `/` 
+- Arithmetic operations `+`, `-`, `*`, `%` and `/` 
 - Boolean operators: `==`, `!=`, >, `<`, `>=`, `<=`, `||` and `&&`
 - Brackets `(` and `)` are used to enforce priorities
 - It is possible to add chars and ints
@@ -47,6 +48,9 @@ If you desire to test the if/else functionalities check out the [`if` test suite
 
 While loops are supported but there are some limitations:
 - You can have a maximum of 6 inputs.
+- There are some issues with expressions that are false
+- Returning within the loop doesn't work
+
 ## Characters
 
 - `char` type is supported
@@ -66,13 +70,25 @@ While loops are supported but there are some limitations:
 
 - We discovered an issue in which characters that contain more than once symbol are considered as valid. As per our grammar and code visitor, they are not considered as valid : `char a = 'ab';` is recognized as valid C code by gcc, but not our compiler.
 
-## 5. Arrays
+## Arrays
 
 - Declaration : `int tab[2];`
 - Declaration & Init : `int tab[2] = {1, 2}`
 - Affectation, either for a constant or a variable : `int a = tab[1]; or int a = tab[i];`
 - Return : `return tab[1];`
+- While valid code works fine, invalid indexing of arrays had some unpredictable behaviours, which we tohught was fine as it should be avoided by developers.
+
 If you desire to test the char functionalities check out the [`char` test suite](/tests/testfiles/char/)
 
 ## Functions
 
+In order to make our compiler stand out, we decided to implement functions, they do have some limitations however:
+- So far we are unsure about returning non int types
+- There can be up to 6 inputs, not more
+- Recursion doesn't work
+
+Other features such as function parameters (using supported types), and local variables should work fine. Calling other functions within a function should also work.
+
+## putchar
+
+The putchar feature is implemented but it was not tested extensively, so there might be some unknown bugs.

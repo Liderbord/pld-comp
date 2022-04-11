@@ -16,3 +16,6 @@ Thereby, when we look if a variable is used, if its name isn't in the used varia
 When we declare a new variable, we write its name in a map. Moreover we verify that the variable is not already existing in the map thanks to an if.
 This allow us to avoid multiple declaration of a variable.
 If a variable is declared more than once, we get this error message : "# ERROR: variable ... is not declared"
+
+## Optimisation des constantes
+Les opérations de constantes sont optimisées. Exemple: `3+2` sera transformée en constante `5` au lieu de faire une opération dans l'assembleur.
